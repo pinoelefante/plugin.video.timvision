@@ -1,0 +1,6 @@
+*.zip
+.vscode/*
+test.py
+timvision-description
+xbmc*.py
+kodistubs/*
