@@ -48,6 +48,22 @@ class Navigation:
     
     def create_film_item(self, movie):
         li = xbmcgui.ListItem(label=movie["metadata"]["title"])
+        #li.addStreamInfo("video",{'duration':int(movie["metadata"]["duration"])})
+        li.setInfo("video", {
+            "year":int(movie["metadata"]["year"]),
+            "rating":float(movie["metadata"]["rating"])*2,
+            "cast":movie["metadata"]["actors"],
+            #"director":movie["metadata"]["directors"][0],
+            "plot":movie["metadata"]["longDescription"],
+            "plotoutline":movie["metadata"]["shortDescription"],
+            "title":movie["metadata"]["title"],
+            "duration":int(movie["metadata"]["duration"]),
+            "genre":movie["metadata"]["genre"]
+        })
+        li.setArt({
+            "fanart":movie["metadata"]["bgImageUrl"],
+            "poster":movie["metadata"]["imageUrl"]
+        })
         return li
 
     def populate_recommended_folder(self,page_type):
@@ -55,11 +71,18 @@ class Navigation:
         if items is None or not items:
             return
 
-        for movie in items:
+        for video in items:
             #self.dump(movie)
             #return
-            li = self.create_film_item(movie)
-            xbmcplugin.addDirectoryItem(handle = self.plugin_handle, isFolder=False, listitem = li, url=self.plugin_dir+"?action=play&contentId=&cpId")
+            folder = video["layout"] == "SERIES_ITEM"
+            if folder:
+                url = "action=apri_serie&id_serie="
+                li = self.create_film_item(video)
+            else:
+                url = "action=play&contentId=&"
+                li = self.create_film_item(video)
+
+            xbmcplugin.addDirectoryItem(handle = self.plugin_handle, isFolder=folder, listitem = li, url=self.plugin_dir+"?action=play&contentId=&cpId")
         xbmcplugin.endOfDirectory(handle = self.plugin_handle)
 
     def get_timvision_service_url (self):
