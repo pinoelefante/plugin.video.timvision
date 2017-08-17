@@ -4,3 +4,6 @@ test.py
 timvision-description
 xbmc*.py
 kodistubs/*
+*.pyc
+*.pyo
+resources/lib/NavigationNF.py

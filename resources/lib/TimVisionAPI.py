@@ -3,8 +3,12 @@ import xbmc
 import xbmcaddon
 import xbmcgui
 import xbmcplugin
-import sys
 from requests import session, cookies
+
+RECOM_TOP_VIEW = "TOP_VIEWED"
+RECOM_MOST_RECENT = "MOST_RECENT"
+RECOM_FOR_YOU = "RECOM_FOR_YOU"
+RECOM_EXPIRING = "EXPIRING"
 
 class TimVisionSession:
     base_url = 'https://www.timvision.it/AVS'
@@ -15,7 +19,7 @@ class TimVisionSession:
     api_endpoint = session()
     license_endpoint = session()
 
-    def __init__(self, plugin_handle):
+    def __init__(self):
         self.api_endpoint.headers.update({
             'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0',
             'Accept-Encoding' : 'gzip, deflate',
@@ -26,7 +30,8 @@ class TimVisionSession:
             'Host' : 'license.timvision.it',
             'Origin' : 'https://www.timvision.it'
         })
-        self.plugin_handle = plugin_handle
+        #self.plugin_handle = plugin_handle
+        self.setup()
 
     def setup(self):
         return self.load_app_settings() and self.load_app_version()
@@ -45,40 +50,80 @@ class TimVisionSession:
         r = self.api_endpoint.get(url)
         if r.status_code == 200:
             data = r.json()
-            if data['responseCode'] == 'OK':
+            if data['resultCode'] == 'OK':
                 self.license_acquisition_url = data['resultObj']['LICENSEACQUISITIONURL']
                 self.user_http_header = data['resultObj']['USER_REQ_HEADER_NAME']
                 self.widevine_proxy_url = data['resultObj']['WV_PROXY_URL']
                 return True
         return False
     def login(self, username, password):
-        url = self.base_url+"/besc?channel="+self.service_channel+"&providerName=TELECOMITALIA&serviceName="+self.service_name+"&action=Login&deviceType="+self.deviceType #+"&accountDeviceId={deviceIdFromLocalStorage}"
-        r=self.api_endpoint.post(url, data = {
+        data = {
             'username':username,
             'password':password,
             'customData':'{"customData":[{"name":"deviceType","value":'+self.deviceType+'},{"name":"deviceVendor","value":""},{"name":"accountDeviceModel","value":""},{"name":"FirmwareVersion","value":""},{"name":"Loader","value":""},{"name":"ResidentApp","value":""},{"name":"DeviceLanguage","value":"it"},{"name":"NetworkType","value":""},{"name":"DisplayDimension","value":""},{"name":"OSversion","value":"Windows 10"},{"name":"AppVersion","value":""},{"name":"DeviceRooted","value":""},{"name":"NetworkOperatoreName","value":""},{"name":"ServiceOperatorName","value":""},{"name":"Custom1","value":"Firefox"},{"name":"Custom2","value":54},{"name":"Custom3","value":"1920x1080"},{"name":"Custom4","value":"PC"},{"name":"Custom5","value":""},{"name":"Custom6","value":""},{"name":"Custom7","value":""},{"name":"Custom8","value":""},{"name":"Custom9","value":""}]}'
-        })
-        if r.status_code == 200:
-            data = r.json()
-            if data['resultCode'] == 'OK':
-                self.api_endpoint.headers.update({
-                    self.user_http_header : data["resultObject"]
-                })
-                self.sessionLoginHash = data["extObject"]["hash"]
-                avs_cookie = self.api_endpoint.cookies.get("avs_cookie")
-                self.license_endpoint.headers.update({
-                    'AVS_COOKIE', avs_cookie
-                })
-                return True
+        }
+        r = self.api_send_request("Login", method = 'POST', postData=data)
+        if r[0]:
+            self.api_endpoint.headers.__setitem__(self.user_http_header, r[1]["resultObj"])
+            self.sessionLoginHash = r[1]["extObject"]["hash"]
+            avs_cookie = self.api_endpoint.cookies.get("avs_cookie")
+            self.license_endpoint.headers.__setitem__('AVS_COOKIE',avs_cookie)
+            return True
         return False
     def logout(self):
-        self.api_endpoint.cookies.clear()
-        self.sessionLoginHash = None
-        self.api_endpoint.headers.pop(self.user_http_header, None)
+        r = self.api_send_request("Logout")
+        if r[0]:
+            self.api_endpoint.cookies.clear()
+            self.sessionLoginHash = None
+            self.api_endpoint.headers.pop(self.user_http_header, None)
+            return True
+        return False
     def is_logged(self):
         return self.sessionLoginHash != None
+    def api_url(self, action, others = {}):
+        query = ""
+        if others!=None:
+            for key,value in others:
+                query += "&"+key+"="+value
+        return self.base_url+"/besc?channel="+self.service_channel+"&providerName=TELECOMITALIA&serviceName="+self.service_name+"&action="+action+"&deviceType="+self.deviceType+query
+    def api_send_request(self, action, method = 'GET', queryData=None, postData=None):
+        r = None
+        if method == "POST":
+            r = self.api_endpoint.post(self.api_url(action, queryData), data=postData)
+        if method == "GET":
+            r = self.api_endpoint.get(self.api_url(action, queryData))
+        if method == "OPTIONS":
+            r = self.api_endpoint.options(self.api_url(action, queryData))
+        if r.status_code == 200:
+            data = r.json()
+            if data["resultCode"] == "OK":
+                return [True, data]
+        return [False]
+    def log_myfile(self, msg):
+        f = open("C:\\Users\\pinoe\\Desktop\\timvision.log", "a")
+        f.writelines(msg)
+        f.close()
+
+    def recommended_video(self, category):
+        url = "https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY/TRAY/RECOM?deviceType="+self.deviceType+"&serviceName="+self.service_name
+        query = {
+            "dataSet":"RICH",
+            "orderBy":"year",
+            "sortOrder":"desc",
+            "area":"HOMEPAGE",
+            "category":"HomePage",
+            "recomType":category,
+            "maxResults":"30"
+        }
+        r = self.api_endpoint.get(url, params = query)
+        if r.status_code == 200:
+            data = r.json()
+            if data["resultCode"] == "OK":
+                return data["resultObj"]["containers"]
+        return False
     def play_video(self, contentId):
         return None
+    #TODO : delete this from here
     def play_item (self, manifest, video_id, licenseKey, start_offset=-1, infoLabels={}):
         addon = xbmcaddon.Addon()
         inputstream_addon = self.get_inputstream_addon()
@@ -112,7 +157,7 @@ class TimVisionSession:
         # set infoLabels
         if len(infoLabels) > 0:
             play_item.setInfo('video',  infoLabels)
-        return xbmcplugin.setResolvedUrl(self.plugin_handle, True, listitem=play_item)
+        #return xbmcplugin.setResolvedUrl(self.plugin_handle, True, listitem=play_item)
     def get_inputstream_addon(self):
         type = 'inputstream.adaptive'
         payload = {

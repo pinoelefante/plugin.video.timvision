@@ -1,10 +1,20 @@
 import sys
-from TimVisionAPI import TimVisionSession
+from resources.lib.KodiHelper import KodiHelper
+from resources.lib.Navigation import Navigation
 
+plugin_dir = sys.argv[0]
 plugin_handle = int(sys.argv[1])
-usernameTest = ""
-passwordTest = ""
-tim = TimVisionSession(plugin_handle)
-if tim.setup() and tim.login(usernameTest, passwordTest):
 
-    pass
+kodi_helper = KodiHelper(
+    plugin_handle=plugin_handle,
+    base_url=plugin_dir
+)
+
+navigation = Navigation(
+    handle = plugin_handle,
+    plugin = plugin_dir,
+    kodi_helper = kodi_helper
+)
+
+if __name__ == '__main__':
+    navigation.router(parameters=sys.argv[2])
