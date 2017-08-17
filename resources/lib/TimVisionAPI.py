@@ -120,7 +120,26 @@ class TimVisionSession:
             data = r.json()
             if data["resultCode"] == "OK":
                 return data["resultObj"]["containers"]
-        return False
+        return None
+    def load_serie_seasons(self, serieId):
+        url = "https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY/DETAILS?contentId="+str(serieId)+"&type=SERIES&renderEngine=DELTA&deviceType="+self.deviceType+"&serviceName="+self.service_name
+        r = self.api_endpoint.get(url)
+        if r.status_code == 200:
+            data = r.json()[0]
+            if data["resultCode"] == "OK":
+                return data["resultObj"]["containers"]
+        return None
+    def load_serie_episodes(self, seasonId):
+        url = "https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY/DETAILS?renderEngine=DELTA&deviceType="+self.deviceType+"&serviceName="+self.service_name+"&contentId="+seasonId+"&type=SEASON"
+        r = self.api_endpoint.get(url)
+        if r.status_code == 200:
+            data = r.json()[0]
+            if data["resultCode"] == "OK":
+                containers = data["resultObj"]["containers"]
+                for cont in containers:
+                    if cont["layout"] == "SEASON":
+                        return cont["items"]
+        return None
     def play_video(self, contentId):
         return None
     #TODO : delete this from here
@@ -128,7 +147,7 @@ class TimVisionSession:
         addon = xbmcaddon.Addon()
         inputstream_addon = self.get_inputstream_addon()
         if inputstream_addon == None:
-            self.show_message("Inputstream addon not found", "Addon error")
+            #self.show_message("Inputstream addon not found", "Addon error")
             return False
 
         # track play event
@@ -175,10 +194,6 @@ class TimVisionSession:
             if data['result']['addon']['enabled']:
                 return type
         return None
-    def show_message(self, message,title):
-        dialog = xbmcgui.Dialog()
-        dialog.notification(title, message, xbmcgui.NOTIFICATION_ERROR, 5000)
-        return True
     def get_certificate_url(self, videoId, cpId):
         #url = "https://license.cubovision.it/WidevineManager/WidevineManager.svc/GetLicense/{ContentIdAVS}/{AssetIdWD}/{CpId}/{Type}/{ClientTime}/{Channel}/{DeviceType}"
         return

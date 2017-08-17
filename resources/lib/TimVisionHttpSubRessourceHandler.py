@@ -25,4 +25,11 @@ class TimVisionHttpSubRessourceHandler:
     def recommended_video(self, params):
         pageType = params.get('category',[''])[0]
         return self.timvision_session.recommended_video(pageType)
-        
+    
+    def load_serie_seasons(self, params):
+        serieId = params.get('serieId',[''])[0]
+        return self.timvision_session.load_serie_seasons(serieId)
+
+    def load_serie_episodes(self, params):
+        seasonId = params.get('seasonId',[''])[0]
+        return self.timvision_session.load_serie_episodes(seasonId)

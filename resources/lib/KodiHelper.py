@@ -76,7 +76,7 @@ class KodiHelper:
             'password': self.get_addon().getSetting('password')
         }
 
-    def log (self, msg, level=xbmc.LOGDEBUG):
+    def log (self, msg, level=xbmc.LOGNOTICE):
         """Adds a log entry to the Kodi log
 
         Parameters
@@ -90,6 +90,12 @@ class KodiHelper:
         if isinstance(msg, unicode):
             msg = msg.encode('utf-8')
         xbmc.log('[%s] %s' % (self.plugin, msg.__str__()), level)
+
+    def show_message(self, message,title):
+        dialog = xbmcgui.Dialog()
+        dialog.notification(title, message, xbmcgui.NOTIFICATION_ERROR, 5000)
+        return True
+
     def log_myfile(self, msg):
         f = open("C:\\Users\\pinoe\\Desktop\\timvision.log", "a")
         f.writelines(msg)
