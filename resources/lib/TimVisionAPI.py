@@ -1,4 +1,6 @@
 import json
+import threading
+import time
 import xbmc
 import xbmcaddon
 import xbmcgui
@@ -68,6 +70,9 @@ class TimVisionSession:
             self.sessionLoginHash = r[1]["extObject"]["hash"]
             avs_cookie = self.api_endpoint.cookies.get("avs_cookie")
             self.license_endpoint.headers.__setitem__('AVS_COOKIE',avs_cookie)
+            self.stop_check_session = threading.Event()
+            check_thread = threading.Thread(target=self.check_session, args=(self.stop_check_session))
+            check_thread.start()
             return True
         return False
     def logout(self):
@@ -76,6 +81,7 @@ class TimVisionSession:
             self.api_endpoint.cookies.clear()
             self.sessionLoginHash = None
             self.api_endpoint.headers.pop(self.user_http_header, None)
+            self.stop_check_session.set()
             return True
         return False
     def is_logged(self):
@@ -140,6 +146,10 @@ class TimVisionSession:
                     if cont["layout"] == "SEASON":
                         return cont["items"]
         return None
+    def check_session(self, stop_event):
+        while not stop_event.is_set():
+            self.api_send_request("CheckSession")
+            stop_event.wait(600)
     def play_video(self, contentId):
         return None
     #TODO : delete this from here
