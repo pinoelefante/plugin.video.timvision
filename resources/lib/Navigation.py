@@ -36,7 +36,9 @@ class Navigation:
                     self.populate_serie_episodes(id_stagione)
                 if action == "play":
                     contentId = params.get("contentId")
-                    self.kodi_helper.show_message("Non implementato ancora","")
+                    videoType = params.get("videoType")
+                    self.play_video(contentId, videoType)
+                    #self.kodi_helper.show_message("Non implementato ancora","")
                     return
     
     def parameters_string_to_dict(self, parameters):
@@ -95,8 +97,8 @@ class Navigation:
             if folder:
                 url = "action=apri_serie&id_serie="+video["id"]
             else:
-                url = "action=play&contentId="+video["id"]
-            xbmcplugin.addDirectoryItem(handle = self.plugin_handle, isFolder=folder, listitem = li, url=self.plugin_dir+"?"+url)
+                url = "action=play&contentId="+video["id"]+"&videoType=MOVIE"
+            xbmcplugin.addDirectoryItem(handle = self.plugin_handle, isFolder=True, listitem = li, url=self.plugin_dir+"?"+url)
         xbmcplugin.endOfDirectory(handle = self.plugin_handle)
     
     def populate_serie_seasons(self, serieId):
@@ -144,8 +146,57 @@ class Navigation:
                     "episode": episode["metadata"]["episodeNumber"],
                     "season": episode["metadata"]["season"]
                 })
-                xbmcplugin.addDirectoryItem(handle=self.plugin_handle,url=self.plugin_dir+"?action=play&contentId="+episode["metadata"]["contentId"],isFolder=False,listitem=li)
+                xbmcplugin.addDirectoryItem(handle=self.plugin_handle,url=self.plugin_dir+"?action=play&videoType=EPISODE&contentId="+episode["metadata"]["contentId"],isFolder=True,listitem=li)
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
+    def play_video(self, contentId, videoType):
+        license_info = self.call_timvision_service({"method":"get_license_video", "contentId":contentId, "videoType":videoType})
+        if license_info is None:
+            return
+        cookie = license_info["AVS_COOKIE"]
+        mpd = license_info["mpd_file"]
+        license_address = license_info["widevine_url"]
+
+        inputstream_addon = self.get_inputstream_addon()
+        if inputstream_addon == None:
+            self.kodi_helper.log("inputstream_addon not found")
+            return
+
+        play_item = xbmcgui.ListItem(path=mpd, label='Play') #manifest = mpd url
+        play_item.setContentLookup(False)
+        play_item.setMimeType('application/dash+xml')
+        play_item.setProperty(inputstream_addon + '.stream_headers', 'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0&AVS_COOKIE='+cookie)        
+        play_item.setProperty(inputstream_addon + '.license_type', 'com.widevine.alpha')
+        play_item.setProperty(inputstream_addon + '.manifest_type', 'mpd')
+        play_item.setProperty(inputstream_addon + '.license_key', license_address)
+        #play_item.setProperty(inputstream_addon + '.server_certificate', 'Cr0CCAMSEOVEukALwQ8307Y2+LVP+0MYh/HPkwUijgIwggEKAoIBAQDm875btoWUbGqQD8eAGuBlGY+Pxo8YF1LQR+Ex0pDONMet8EHslcZRBKNQ/09RZFTP0vrYimyYiBmk9GG+S0wB3CRITgweNE15cD33MQYyS3zpBd4z+sCJam2+jj1ZA4uijE2dxGC+gRBRnw9WoPyw7D8RuhGSJ95OEtzg3Ho+mEsxuE5xg9LM4+Zuro/9msz2bFgJUjQUVHo5j+k4qLWu4ObugFmc9DLIAohL58UR5k0XnvizulOHbMMxdzna9lwTw/4SALadEV/CZXBmswUtBgATDKNqjXwokohncpdsWSauH6vfS6FXwizQoZJ9TdjSGC60rUB2t+aYDm74cIuxAgMBAAE6EHRlc3QubmV0ZmxpeC5jb20SgAOE0y8yWw2Win6M2/bw7+aqVuQPwzS/YG5ySYvwCGQd0Dltr3hpik98WijUODUr6PxMn1ZYXOLo3eED6xYGM7Riza8XskRdCfF8xjj7L7/THPbixyn4mULsttSmWFhexzXnSeKqQHuoKmerqu0nu39iW3pcxDV/K7E6aaSr5ID0SCi7KRcL9BCUCz1g9c43sNj46BhMCWJSm0mx1XFDcoKZWhpj5FAgU4Q4e6f+S8eX39nf6D6SJRb4ap7Znzn7preIvmS93xWjm75I6UBVQGo6pn4qWNCgLYlGGCQCUm5tg566j+/g5jvYZkTJvbiZFwtjMW5njbSRwB3W4CrKoyxw4qsJNSaZRTKAvSjTKdqVDXV/U5HK7SaBA6iJ981/aforXbd2vZlRXO/2S+Maa2mHULzsD+S5l4/YGpSt7PnkCe25F+nAovtl/ogZgjMeEdFyd/9YMYjOS4krYmwp3yJ7m9ZzYCQ6I8RQN4x/yLlHG5RH/+WNLNUs6JAZ0fFdCmw=')
+        play_item.setProperty('inputstreamaddon', inputstream_addon)
+        xbmcplugin.addDirectoryItem(listitem=play_item, url=mpd, isFolder=False, handle=self.plugin_handle)
+        xbmcplugin.endOfDirectory(handle=self.plugin_handle)
+        # check if we have a bookmark e.g. start offset position
+        '''
+        if int(start_offset) > 0:
+            play_item.setProperty('StartOffset', str(start_offset) + '.0')
+        # set infoLabels
+        if len(infoLabels) > 0:
+            play_item.setInfo('video',  infoLabels)
+        '''
+    def get_inputstream_addon(self):
+        type = 'inputstream.adaptive'
+        payload = {
+            'jsonrpc': '2.0',
+            'id': 1,
+            'method': 'Addons.GetAddonDetails',
+            'params': {
+                'addonid': type,
+                'properties': ['enabled']
+            }
+        }
+        response = xbmc.executeJSONRPC(json.dumps(payload))
+        data = json.loads(response)
+        if not 'error' in data.keys():
+            if data['result']['addon']['enabled']:
+                return type
+        return None
     def get_timvision_service_url (self):
         return 'http://127.0.0.1:' + str(self.kodi_helper.get_addon().getSetting('timvision_service_port'))
     def call_timvision_service (self, params):

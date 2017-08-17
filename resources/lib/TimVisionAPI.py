@@ -68,8 +68,8 @@ class TimVisionSession:
         if r[0]:
             self.api_endpoint.headers.__setitem__(self.user_http_header, r[1]["resultObj"])
             self.sessionLoginHash = r[1]["extObject"]["hash"]
-            avs_cookie = self.api_endpoint.cookies.get("avs_cookie")
-            self.license_endpoint.headers.__setitem__('AVS_COOKIE',avs_cookie)
+            self.avs_cookie = self.api_endpoint.cookies.get("avs_cookie")
+            self.license_endpoint.headers.__setitem__('AVS_COOKIE',self.avs_cookie)
             self.stop_check_session = threading.Event()
             check_thread = threading.Thread(target=self.check_session, args=(self.stop_check_session))
             check_thread.start()
@@ -150,60 +150,27 @@ class TimVisionSession:
         while not stop_event.is_set():
             self.api_send_request("CheckSession")
             stop_event.wait(600)
-    def play_video(self, contentId):
-        return None
-    #TODO : delete this from here
-    def play_item (self, manifest, video_id, licenseKey, start_offset=-1, infoLabels={}):
-        addon = xbmcaddon.Addon()
-        inputstream_addon = self.get_inputstream_addon()
-        if inputstream_addon == None:
-            #self.show_message("Inputstream addon not found", "Addon error")
-            return False
-
-        # track play event
-        #self.track_event('playVideo')
-
-        # check esn in settings
-        #settings_esn = str(addon.getSetting('esn'))
-        #if len(settings_esn) == 0:
-        #    addon.setSetting('esn', str(esn))
-
-        # inputstream addon properties
-        #msl_service_url = 'http://localhost:' + str(addon.getSetting('msl_service_port'))
-        play_item = xbmcgui.ListItem(path=manifest) #manifest = mpd url
-        play_item.setContentLookup(False)
-        play_item.setMimeType('application/dash+xml')
-        play_item.setProperty(inputstream_addon + '.stream_headers', 'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0')        
-        play_item.setProperty(inputstream_addon + '.license_type', 'com.widevine.alpha')
-        play_item.setProperty(inputstream_addon + '.manifest_type', 'mpd')
-        play_item.setProperty(inputstream_addon + '.license_key', licenseKey) #license url
-        #play_item.setProperty(inputstream_addon + '.server_certificate', 'Cr0CCAMSEOVEukALwQ8307Y2+LVP+0MYh/HPkwUijgIwggEKAoIBAQDm875btoWUbGqQD8eAGuBlGY+Pxo8YF1LQR+Ex0pDONMet8EHslcZRBKNQ/09RZFTP0vrYimyYiBmk9GG+S0wB3CRITgweNE15cD33MQYyS3zpBd4z+sCJam2+jj1ZA4uijE2dxGC+gRBRnw9WoPyw7D8RuhGSJ95OEtzg3Ho+mEsxuE5xg9LM4+Zuro/9msz2bFgJUjQUVHo5j+k4qLWu4ObugFmc9DLIAohL58UR5k0XnvizulOHbMMxdzna9lwTw/4SALadEV/CZXBmswUtBgATDKNqjXwokohncpdsWSauH6vfS6FXwizQoZJ9TdjSGC60rUB2t+aYDm74cIuxAgMBAAE6EHRlc3QubmV0ZmxpeC5jb20SgAOE0y8yWw2Win6M2/bw7+aqVuQPwzS/YG5ySYvwCGQd0Dltr3hpik98WijUODUr6PxMn1ZYXOLo3eED6xYGM7Riza8XskRdCfF8xjj7L7/THPbixyn4mULsttSmWFhexzXnSeKqQHuoKmerqu0nu39iW3pcxDV/K7E6aaSr5ID0SCi7KRcL9BCUCz1g9c43sNj46BhMCWJSm0mx1XFDcoKZWhpj5FAgU4Q4e6f+S8eX39nf6D6SJRb4ap7Znzn7preIvmS93xWjm75I6UBVQGo6pn4qWNCgLYlGGCQCUm5tg566j+/g5jvYZkTJvbiZFwtjMW5njbSRwB3W4CrKoyxw4qsJNSaZRTKAvSjTKdqVDXV/U5HK7SaBA6iJ981/aforXbd2vZlRXO/2S+Maa2mHULzsD+S5l4/YGpSt7PnkCe25F+nAovtl/ogZgjMeEdFyd/9YMYjOS4krYmwp3yJ7m9ZzYCQ6I8RQN4x/yLlHG5RH/+WNLNUs6JAZ0fFdCmw=')
-        play_item.setProperty('inputstreamaddon', inputstream_addon)
-
-        # check if we have a bookmark e.g. start offset position
-        if int(start_offset) > 0:
-            play_item.setProperty('StartOffset', str(start_offset) + '.0')
-        # set infoLabels
-        if len(infoLabels) > 0:
-            play_item.setInfo('video',  infoLabels)
-        #return xbmcplugin.setResolvedUrl(self.plugin_handle, True, listitem=play_item)
-    def get_inputstream_addon(self):
-        type = 'inputstream.adaptive'
-        payload = {
-            'jsonrpc': '2.0',
-            'id': 1,
-            'method': 'Addons.GetAddonDetails',
-            'params': {
-                'addonid': type,
-                'properties': ['enabled']
+    def get_license_info(self, contentId, videoType):
+        mpdContent = self.get_mpd_file(contentId, videoType)
+        if mpdContent != None:
+            assetIdWd = self.get_assetIdWd(mpdContent["mpd"])
+            return {
+                'AVS_COOKIE':self.avs_cookie,
+                "mpd_file":mpdContent["mpd"],
+                #"cpId":mpdContent["cpId"],
+                "widevine_url":self.license_acquisition_url.replace("{ContentIdAVS}",contentId).replace("{AssetIdWD}",assetIdWd).replace("{CpId}",mpdContent["cpId"]).replace("{Type}","VOD").replace("{ClientTime}",str(long(time.time()*1000))).replace("{Channel}",self.service_channel).replace("{DeviceType}","CHROME").replace('http://', 'https://')
             }
-        }
-        response = xbmc.executeJSONRPC(json.dumps(payload))
-        data = json.loads(response)
-        if not 'error' in data.keys():
-            if data['result']['addon']['enabled']:
-                return type
         return None
-    def get_certificate_url(self, videoId, cpId):
-        #url = "https://license.cubovision.it/WidevineManager/WidevineManager.svc/GetLicense/{ContentIdAVS}/{AssetIdWD}/{CpId}/{Type}/{ClientTime}/{Channel}/{DeviceType}"
-        return
+    def get_assetIdWd(self, mpdUrl):
+        partial = mpdUrl[mpdUrl.find("DASH")+5:]
+        partial = partial[0:partial.find("/")]
+        return partial
+    def get_mpd_file(self,contentId,videoType):
+        url = "https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY/PLAY?contentId="+contentId+"&deviceType=CHROME&serviceName="+self.service_name+"&type="+videoType
+        r = self.api_endpoint.get(url)
+        if r.status_code == 200:
+            data = r.json()
+            cpId = data["resultObj"]["cp_id"]
+            mpd = data["resultObj"]["src"]
+            return {"cpId": cpId, "mpd":mpd}
+        return None
