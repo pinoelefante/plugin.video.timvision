@@ -29,7 +29,9 @@ class Navigation:
                     items = self.call_timvision_service({"method":"recommended_video", "category":page})
                     self.add_items_to_folder(items)
                 if page == "CINEMA":
-                    pass
+                    loadAll = self.kodi_helper.get_setting("film_load_all")
+                    items = self.call_timvision_service({"method":"load_movies", "begin":"0", "load_all":loadAll})
+                    self.add_items_to_folder(items)
                 if page == "SERIETV":
                     pass
                 if page == "INTRATTENIMENTO":
@@ -43,7 +45,8 @@ class Navigation:
                     self.populate_serie_seasons(id_serie)
                 if action == "apri_stagione":
                     id_stagione = params.get("id_stagione")
-                    self.populate_serie_episodes(id_stagione)
+                    items = self.call_timvision_service({"method":"load_serie_episodes", "seasonId":id_stagione})
+                    self.add_items_to_folder(items)
                 if action == "play_item":
                     contentId = params.get("contentId")
                     videoType = params.get("videoType")
@@ -95,53 +98,42 @@ class Navigation:
             "poster":movie["metadata"]["imageUrl"]
         })
         if is_episode:
-            li.setLabel(episode["metadata"]["episodeNumber"]+" - "+movie["metadata"]["title"])
+            li.setLabel(movie["metadata"]["episodeNumber"]+" - "+movie["metadata"]["title"])
             li.setInfo("video", 
             {
-                "episode": episode["metadata"]["episodeNumber"],
-                "season": episode["metadata"]["season"]
+                "episode": movie["metadata"]["episodeNumber"],
+                "season": movie["metadata"]["season"]
             })
         return li
-
-    def populate_recommended_folder(self,page_type):
-        items = self.call_timvision_service({"method":"recommended_video", "category":page_type})
-        if items is None:
-            self.kodi_helper.show_message("Si e' verificato un errore", "")
-            return
-
-        count = len(items)
-        if count == 0:
-            self.kodi_helper.show_message("Non sono presenti contenuti","Elenco vuoto")
-            return
-
-        for video in items:
-            folder = video["layout"] == "SERIES_ITEM"
-            li = self.create_list_item(video)
-            if folder:
-                url = "action=apri_serie&id_serie="+video["id"]
-            else:
-                li.setProperty('isPlayable', 'true')
-                url = "action=play_item&contentId="+video["id"]+"&videoType=MOVIE"
-            xbmcplugin.addDirectoryItem(handle = self.plugin_handle, isFolder=folder, listitem = li, url=self.plugin_dir+"?"+url)
-        xbmcplugin.endOfDirectory(handle = self.plugin_handle)
-        return True
+    def is_content_item(self, l):
+        return l=="SERIES_ITEM" or l=="MOVIE_ITEM" or l=="EPISODE"
     def add_items_to_folder(self, items):
         if items == None:
             return
         if len(items) == 0:
-            self.kodi_helper.show_message("Non sono presenti contenuti","Elenco vuoto")
+            self.kodi_helper.show_message("Non sono presenti contenuti? Controlla su timvision.it e/o contatta lo sviluppatore del plugin","Elenco vuoto")
             return
-
+        _is_episodes = False
         for container in items:
+            if not self.is_content_item(container["layout"]):
+                continue
             folder = container["layout"] == "SERIES_ITEM"
-            li = self.create_list_item(video)
+            li = self.create_list_item(container, container["layout"]=="EPISODE")
             if folder:
                 url = "action=apri_serie&id_serie="+container["id"]
             else:
-                videoType = "MOVIE" if video["layout"]=="MOVIE_ITEM" else "EPISODE"
+                videoType = "MOVIE" if container["layout"]=="MOVIE_ITEM" else "EPISODE"
+                contentId = container["id"] if videoType=="MOVIE" else container["metadata"]["contentId"]
                 li.setProperty('isPlayable', 'true')
-                url = "action=play_item&contentId="+video["id"]+"&videoType="+videoType
+                url = "action=play_item&contentId="+str(contentId)+"&videoType="+videoType
+                if not _is_episodes and videoType=="EPISODE":
+                    _is_episodes = True
             xbmcplugin.addDirectoryItem(handle=self.plugin_handle,isFolder=folder, listitem=li, url=self.plugin_dir+"?"+url)
+        if not _is_episodes:
+            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
+            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
+            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
         return True
     def populate_serie_seasons(self, serieId):
@@ -163,23 +155,7 @@ class Navigation:
                 url = "action=apri_stagione&id_stagione="+season["metadata"]["contentId"]
                 xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=self.plugin_dir+"?"+url,listitem=li, isFolder=True)
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
-    def populate_serie_episodes(self, seasonId):
-        items = self.call_timvision_service({"method":"load_serie_episodes", "seasonId":seasonId})
-        if items is None:
-            self.kodi_helper.show_message("Si e' verificato un errore", "")
-            return
-        count = len(items)
-        if count == 0:
-            self.kodi_helper.show_message("Non sono presenti episodi? Controlla su timvision.it e/o contatta lo sviluppatore del plugin","Possibile errore")
-            return
-        for episode in items:
-            if episode["layout"] == "EPISODE":
-                li = self.create_list_item(episode, True)
-                li.setProperty('isPlayable', 'true')
-                xbmcplugin.addDirectoryItem(handle=self.plugin_handle,url=self.plugin_dir+"?action=play_item&videoType=EPISODE&contentId="+episode["metadata"]["contentId"],isFolder=False,listitem=li)
-        xbmcplugin.endOfDirectory(handle=self.plugin_handle)
-        return True
-
+    
     def play_video(self, contentId, videoType):
         license_info = self.call_timvision_service({"method":"get_license_video", "contentId":contentId, "videoType":videoType})
         if license_info == None:

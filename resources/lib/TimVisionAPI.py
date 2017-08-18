@@ -1,10 +1,6 @@
 import json
 import threading
 import time
-import xbmc
-import xbmcaddon
-import xbmcgui
-import xbmcplugin
 from requests import session, cookies
 
 RECOM_TOP_VIEW = "TOP_VIEWED"
@@ -171,7 +167,7 @@ class TimVisionSession:
             mpd = data["resultObj"]["src"]
             return {"cpId": cpId, "mpd":mpd}
         return None
-    def load_movies(self, begin=0, progress=100):
+    def load_movies(self, begin=0, progress=100, load_all = False):
         end = int(begin)+progress
         url = "https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY/TRAY/SEARCH/VOD?from="+str(begin)+"&to="+str(end)+"&sorting=order:year+desc&categoryName=Cinema&offerType=SVOD&deviceType="+self.deviceType+"&serviceName="+self.service_name
         r = self.api_endpoint.get(url)
@@ -180,7 +176,7 @@ class TimVisionSession:
             if data["resultCode"] == "OK":
                 maxCount = data["resultObj"]["total"]
                 movies = data["resultObj"]["containers"]
-                if xbmcplugin.getSetting(int(sys(argv[1])), "film_load_all"):
+                if load_all:
                     if end<=maxCount:
                         other_movie = self.load_movies(end)
                         if other_movie!=None:
