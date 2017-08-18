@@ -70,9 +70,9 @@ class TimVisionSession:
             self.sessionLoginHash = r[1]["extObject"]["hash"]
             self.avs_cookie = self.api_endpoint.cookies.get("avs_cookie")
             self.license_endpoint.headers.__setitem__('AVS_COOKIE',self.avs_cookie)
-            self.stop_check_session = threading.Event()
-            check_thread = threading.Thread(target=self.check_session, args=(self.stop_check_session))
-            check_thread.start()
+            #self.stop_check_session = threading.Event()
+            #check_thread = threading.Thread(target=self.check_session, args=(self.stop_check_session))
+            #check_thread.start()
             return True
         return False
     def logout(self):
@@ -81,7 +81,7 @@ class TimVisionSession:
             self.api_endpoint.cookies.clear()
             self.sessionLoginHash = None
             self.api_endpoint.headers.pop(self.user_http_header, None)
-            self.stop_check_session.set()
+            #self.stop_check_session.set()
             return True
         return False
     def is_logged(self):
@@ -105,10 +105,6 @@ class TimVisionSession:
             if data["resultCode"] == "OK":
                 return [True, data]
         return [False]
-    def log_myfile(self, msg):
-        f = open("C:\\Users\\pinoe\\Desktop\\timvision.log", "a")
-        f.writelines(msg)
-        f.close()
 
     def recommended_video(self, category):
         url = "https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY/TRAY/RECOM?deviceType="+self.deviceType+"&serviceName="+self.service_name
@@ -150,6 +146,7 @@ class TimVisionSession:
         while not stop_event.is_set():
             self.api_send_request("CheckSession")
             stop_event.wait(600)
+        
     def get_license_info(self, contentId, videoType):
         mpdContent = self.get_mpd_file(contentId, videoType)
         if mpdContent != None:
@@ -158,7 +155,7 @@ class TimVisionSession:
                 'AVS_COOKIE':self.avs_cookie,
                 "mpd_file":mpdContent["mpd"],
                 #"cpId":mpdContent["cpId"],
-                "widevine_url":self.license_acquisition_url.replace("{ContentIdAVS}",contentId).replace("{AssetIdWD}",assetIdWd).replace("{CpId}",mpdContent["cpId"]).replace("{Type}","VOD").replace("{ClientTime}",str(long(time.time()*1000))).replace("{Channel}",self.service_channel).replace("{DeviceType}","CHROME").replace('http://', 'https://')
+                "widevine_url":self.widevine_proxy_url.replace("{ContentIdAVS}",contentId).replace("{AssetIdWD}",assetIdWd).replace("{CpId}",mpdContent["cpId"]).replace("{Type}","VOD").replace("{ClientTime}",str(long(time.time()*1000))).replace("{Channel}",self.service_channel).replace("{DeviceType}","CHROME").replace('http://', 'https://')
             }
         return None
     def get_assetIdWd(self, mpdUrl):
@@ -173,4 +170,20 @@ class TimVisionSession:
             cpId = data["resultObj"]["cp_id"]
             mpd = data["resultObj"]["src"]
             return {"cpId": cpId, "mpd":mpd}
+        return None
+    def load_movies(self, begin=0, progress=100):
+        end = int(begin)+progress
+        url = "https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY/TRAY/SEARCH/VOD?from="+str(begin)+"&to="+str(end)+"&sorting=order:year+desc&categoryName=Cinema&offerType=SVOD&deviceType="+self.deviceType+"&serviceName="+self.service_name
+        r = self.api_endpoint.get(url)
+        if r.status_code == 200:
+            data = r.json()
+            if data["resultCode"] == "OK":
+                maxCount = data["resultObj"]["total"]
+                movies = data["resultObj"]["containers"]
+                if xbmcplugin.getSetting(int(sys(argv[1])), "film_load_all"):
+                    if end<=maxCount:
+                        other_movie = self.load_movies(end)
+                        if other_movie!=None:
+                            movies.extend(other_movie)
+                return movies
         return None

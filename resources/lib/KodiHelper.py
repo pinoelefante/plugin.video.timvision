@@ -53,6 +53,8 @@ class KodiHelper:
         dialog = xbmcgui.Dialog()
         dialog.notification(self.get_local_string(string_id=30028), self.get_local_string(string_id=30029), xbmcgui.NOTIFICATION_ERROR, 5000)
         return True
+    def get_setting(self, key):
+        return self.get_addon().getSetting(key)
     def set_setting (self, key, value):
         """Public interface for the addons setSetting method
 

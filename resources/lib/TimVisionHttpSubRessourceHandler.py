@@ -38,3 +38,6 @@ class TimVisionHttpSubRessourceHandler:
         contentid = params.get("contentId",[""])[0]
         videoType = params.get("videoType", [""])[0]
         return self.timvision_session.get_license_info(contentid, videoType)
+    def load_movies(self, params={}):
+        begin = int(params.get("begin", ["0"])[0])
+        return self.timvision_session.load_movies(begin)
