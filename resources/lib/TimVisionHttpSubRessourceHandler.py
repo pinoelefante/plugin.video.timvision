@@ -40,5 +40,13 @@ class TimVisionHttpSubRessourceHandler:
         return self.timvision_session.get_license_info(contentid, videoType)
     def load_movies(self, params={}):
         begin = int(params.get("begin", ["0"])[0])
-        load_all = bool(params.get("load_all", ["False"])[0])
-        return self.timvision_session.load_movies(begin=begin, load_all = load_all)
+        load_all = True #bool(params.get("load_all", ["False"])[0])
+        return self.timvision_session.load_contents(begin=begin, load_all = load_all, category="Cinema")
+    def load_series(self, params={}):
+        begin = int(params.get("begin", ["0"])[0])
+        load_all = True #bool(params.get("load_all", ["False"])[0])
+        return self.timvision_session.load_contents(begin=begin, load_all = load_all, category="Serie")
+    def load_kids(self, params={}):
+        begin = int(params.get("begin", ["0"])[0])
+        load_all = True #bool(params.get("load_all", ["False"])[0])
+        return self.timvision_session.load_contents(begin=begin, load_all = load_all, category="Kids")

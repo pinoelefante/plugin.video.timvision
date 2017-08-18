@@ -29,14 +29,20 @@ class Navigation:
                     items = self.call_timvision_service({"method":"recommended_video", "category":page})
                     self.add_items_to_folder(items)
                 if page == "CINEMA":
-                    loadAll = self.kodi_helper.get_setting("film_load_all")
-                    items = self.call_timvision_service({"method":"load_movies", "begin":"0", "load_all":loadAll})
+                    #loadAll = self.kodi_helper.get_setting("film_load_all")
+                    items = self.call_timvision_service({"method":"load_movies", "begin":"0", "load_all":"true"})
                     self.add_items_to_folder(items)
                 if page == "SERIETV":
+                    #loadAll = self.kodi_helper.get_setting("serie_load_all")
+                    items = self.call_timvision_service({"method":"load_series", "begin":"0", "load_all":"true"})
+                    self.add_items_to_folder(items)
                     pass
                 if page == "INTRATTENIMENTO":
                     pass
                 if page == "KIDS":
+                    #loadAll = self.kodi_helper.get_setting("serie_load_all")
+                    items = self.call_timvision_service({"method":"load_kids", "begin":"0", "load_all":"true"})
+                    self.add_items_to_folder(items)
                     pass
             if params.has_key("action"):
                 action = params.get("action")
@@ -174,10 +180,10 @@ class Navigation:
         play_item = xbmcgui.ListItem(path=mpd) #manifest = mpd url
         play_item.setContentLookup(False)
         play_item.setMimeType('application/dash+xml')
-        play_item.setProperty(inputstream_addon + '.stream_headers', 'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0&AVS_COOKIE='+cookie)        
+        play_item.setProperty(inputstream_addon + '.stream_headers', 'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0')        
         play_item.setProperty(inputstream_addon + '.license_type', 'com.widevine.alpha')
         play_item.setProperty(inputstream_addon + '.manifest_type', 'mpd')
-        play_item.setProperty(inputstream_addon + '.license_key', license_address +'||R{SSM}|') #'||b{SSM}!b{SID}|'
+        play_item.setProperty(inputstream_addon + '.license_key', license_address +'||R{SSM}|'+'AVS_COOKIE='+cookie) #'||b{SSM}!b{SID}|'
         play_item.setProperty('inputstreamaddon', "inputstream.adaptive")
         xbmcplugin.setResolvedUrl(handle=self.plugin_handle, succeeded=True, listitem=play_item)
         

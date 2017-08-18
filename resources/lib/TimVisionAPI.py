@@ -167,9 +167,9 @@ class TimVisionSession:
             mpd = data["resultObj"]["src"]
             return {"cpId": cpId, "mpd":mpd}
         return None
-    def load_movies(self, begin=0, progress=100, load_all = False):
+    def load_contents(self, category, begin=0, progress=49, load_all = False):
         end = int(begin)+progress
-        url = "https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY/TRAY/SEARCH/VOD?from="+str(begin)+"&to="+str(end)+"&sorting=order:year+desc&categoryName=Cinema&offerType=SVOD&deviceType="+self.deviceType+"&serviceName="+self.service_name
+        url = "https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY/TRAY/SEARCH/VOD?from="+str(begin)+"&to="+str(end)+"&sorting=order:title+asc&categoryName="+category+"&offerType=SVOD&deviceType="+self.deviceType+"&serviceName="+self.service_name
         r = self.api_endpoint.get(url)
         if r.status_code == 200:
             data = r.json()
@@ -178,7 +178,7 @@ class TimVisionSession:
                 movies = data["resultObj"]["containers"]
                 if load_all:
                     if end<=maxCount:
-                        other_movie = self.load_movies(end)
+                        other_movie = self.load_contents(begin=end, load_all=load_all, category=category)
                         if other_movie!=None:
                             movies.extend(other_movie)
                 return movies

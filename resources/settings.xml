@@ -3,11 +3,11 @@
   <category label="Account">
     <setting id="username" type="text" label="Username" default=""/>
     <setting id="password" type="text" option="hidden" label="Password" default=""/>
-	  <setting id="prefer_hd" type="bool" label="Preferisci HD" value="false" default="false"/>>
+	  <setting id="prefer_hd" type="bool" label="Preferisci HD" value="false" default="false"/>
     <setting id="timvision_service_port" value="8001" visible="false"/>
   </category>
   <category label="Catalogo">
-    <setting id="film_load_all" type="bool" label="Carica tutti i film" value="false" default="false"/>>
-    <setting id="serie_load_all" type="bool" label="Carica tutte le serie" value="false" default="false"/>>
+    <setting id="film_load_all" type="bool" label="Carica tutti i film" value="true" default="true" visible="false"/>
+    <setting id="serie_load_all" type="bool" label="Carica tutte le serie" value="true" default="true" visible="false"/>
   </category>
 </settings>
