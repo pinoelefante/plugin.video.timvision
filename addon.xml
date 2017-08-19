@@ -18,10 +18,10 @@
     </assets>
     <platform>all</platform>
     <license>MIT</license>
-    <forum>http://www.kodinerds.net/index.php/Thread/55607-Inputstream-Agile-Betatest-Netflix/</forum>
     <source>https://github.com/pinoelefante/plugin.video.timvision</source>
-    <news>v0.0.1 (2017-08-16)
-    - First release
+    <news>v0.0.2 (2017-08-19)
+    LA RIPRODUZIONE VIDEO NON FUNZIONA
+    - Listing delle categorie
     </news>
   </extension>
 </addon>

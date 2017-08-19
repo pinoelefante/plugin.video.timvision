@@ -127,9 +127,11 @@ class Navigation:
 
     def create_list_item(self, movie, is_episode=False):
         li = xbmcgui.ListItem(label=movie["metadata"]["title"])
+        rating = float(movie["metadata"]["rating"])*2
+        rating_s = str(rating)
         li.setInfo("video", {
             "year": str(movie["metadata"]["year"]),
-            "rating": str((movie["metadata"]["rating"]) * 2),
+            "rating": rating_s,
             "cast": movie["metadata"]["actors"],
             #"director":movie["metadata"]["directors"][0],
             "plot": movie["metadata"]["longDescription"],
