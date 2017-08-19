@@ -41,13 +41,44 @@ class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_error(404, 'Method "' + str(method) +
                             '" not found. Available methods: ' + str(methods))
             return
-
         # call method & get the result
         result = getattr(sub_res_handler, method)(params)
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
         self.wfile.write(json.dumps({'method': method, 'result': result}))
+        return
+    
+    """ Used just for widevine request """
+    def do_POST(self):
+        url = urlparse(self.path)
+        params = parse_qs(url.query)
+        method = params.get("action")[0]
+        
+        # not method given
+        if method == None:
+            self.send_error(500, 'No method declared')
+            return
+
+        # no existing method given
+        if method not in methods:
+            self.send_error(404, 'Method "' + str(method) +
+                            '" not found. Available methods: ' + str(methods))
+            return
+        
+        rawdata = self.rfile.read(int(self.headers.getheader('Content-Length')))
+        # call method & get the result
+        result = getattr(sub_res_handler, method)(params,rawdata)
+        if result!=None:
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(result)
+        else:
+            self.send_response(500)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write("")
         return
 
     def log_message(self, format, *args):

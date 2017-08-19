@@ -237,7 +237,7 @@ class Navigation:
         if inputstream_addon == None:
             self.kodi_helper.log("inputstream_addon not found")
             return
-
+        my_license_address = self.get_timvision_service_url()+"?action=get_license&license_url="+urllib.quote(license_address)
         play_item = xbmcgui.ListItem(path=mpd)  # manifest = mpd url
         play_item.setContentLookup(False)
         play_item.setMimeType('application/dash+xml')
@@ -246,8 +246,9 @@ class Navigation:
         play_item.setProperty(inputstream_addon +
                               '.license_type', 'com.widevine.alpha')
         play_item.setProperty(inputstream_addon + '.manifest_type', 'mpd')
-        play_item.setProperty(inputstream_addon + '.license_key', license_address +
-                              '||R{SSM}|' + 'AVS_COOKIE=' + cookie)  # '||b{SSM}!b{SID}|'
+        #play_item.setProperty(inputstream_addon + '.license_key', license_address +
+        #                      '||R{SSM}|' + 'AVS_COOKIE=' + cookie)  # '||b{SSM}!b{SID}|'
+        play_item.setProperty(inputstream_addon + '.license_key', my_license_address+'||R{SSM}|')
         play_item.setProperty('inputstreamaddon', "inputstream.adaptive")
         xbmcplugin.setResolvedUrl(
             handle=self.plugin_handle, succeeded=True, listitem=play_item)

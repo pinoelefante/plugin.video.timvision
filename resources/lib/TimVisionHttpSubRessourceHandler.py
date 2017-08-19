@@ -63,3 +63,7 @@ class TimVisionHttpSubRessourceHandler:
     def get_contents(self, params):
         url = params.get("url")[0]
         return self.timvision_session.get_contents(url)
+
+    def get_license(self,params,rawdata):
+        url = urllib.unquote(params.get("license_url")[0])
+        return self.timvision_session.get_widevine_response(rawdata,url)

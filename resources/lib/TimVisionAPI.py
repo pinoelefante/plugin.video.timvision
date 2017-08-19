@@ -182,13 +182,26 @@ class TimVisionSession:
             return data["resultObj"]["containers"]
         return None
 
-    def log_myfile(self, msg, enable=True):
+    def log_myfile(self, msg,filename="timvision.log",enable=False):
         if enable:
             if(msg != None):
                 if isinstance(msg, unicode):
                     msg = msg.encode('utf-8')
                 desktop = os.path.join(os.environ["HOMEPATH"], "Desktop")
-                filepath = os.path.join(desktop, "timvision.log")
+                filepath = os.path.join(desktop, filename)
                 f = open(filepath, "a")
                 f.writelines(msg + "\n")
                 f.close()
+
+    def get_widevine_response(self, widevineRequest, widevine_url, count=0):
+        if count == 3:
+            return None
+        self.log_myfile("Trying to get widevine license", filename="widevine.log")
+        resp = self.license_endpoint.post(widevine_url, data=widevineRequest)
+        self.log_myfile("Status code: "+str(resp.status_code), filename="widevine.log")
+        self.log_myfile("widevine license")
+        if resp.status_code == 200:
+            self.log_myfile("We get it! WOW", filename="widevine.log")
+            return resp.content
+        else:
+            return self.get_widevine_response(widevineRequest,widevine_url, count+1)

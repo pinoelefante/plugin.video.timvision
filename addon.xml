@@ -19,9 +19,8 @@
     <platform>all</platform>
     <license>MIT</license>
     <source>https://github.com/pinoelefante/plugin.video.timvision</source>
-    <news>v0.0.2 (2017-08-19)
-    LA RIPRODUZIONE VIDEO NON FUNZIONA
-    - Listing delle categorie
+    <news>v1.0.0 (2017-08-19)
+    - Riproduzione video funzionante
     </news>
   </extension>
 </addon>
