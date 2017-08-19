@@ -8,10 +8,11 @@ import xbmc
 import json
 from xbmcaddon import Addon
 
+
 class KodiHelper:
     """Consumes all the configuration data from Kodi as well as turns data into lists of folders and videos"""
 
-    def __init__ (self, plugin_handle=None, base_url=None):
+    def __init__(self, plugin_handle=None, base_url=None):
         """Fetches all needed info from Kodi & configures the baseline of the plugin
 
         Parameters
@@ -34,15 +35,15 @@ class KodiHelper:
         self.data_path = self.base_data_path + 'DATA'
         self.default_fanart = addon.getAddonInfo('fanart')
 
-    def get_addon (self):
+    def get_addon(self):
         """Returns a fresh addon instance"""
         return Addon()
 
-    def refresh (self):
+    def refresh(self):
         """Refresh the current list"""
         return xbmc.executebuiltin('Container.Refresh')
 
-    def show_missing_inputstream_addon_notification (self):
+    def show_missing_inputstream_addon_notification(self):
         """Shows notification that the inputstream addon couldn't be found
 
         Returns
@@ -51,11 +52,14 @@ class KodiHelper:
             Dialog shown
         """
         dialog = xbmcgui.Dialog()
-        dialog.notification(self.get_local_string(string_id=30028), self.get_local_string(string_id=30029), xbmcgui.NOTIFICATION_ERROR, 5000)
+        dialog.notification(self.get_local_string(string_id=30028), self.get_local_string(
+            string_id=30029), xbmcgui.NOTIFICATION_ERROR, 5000)
         return True
+
     def get_setting(self, key):
         return self.get_addon().getSetting(key)
-    def set_setting (self, key, value):
+
+    def set_setting(self, key, value):
         """Public interface for the addons setSetting method
 
         Returns
@@ -65,7 +69,7 @@ class KodiHelper:
         """
         return self.get_addon().setSetting(key, value)
 
-    def get_credentials (self):
+    def get_credentials(self):
         """Returns the users stored credentials
 
         Returns
@@ -78,7 +82,7 @@ class KodiHelper:
             'password': self.get_addon().getSetting('password')
         }
 
-    def log (self, msg, level=xbmc.LOGNOTICE):
+    def log(self, msg, level=xbmc.LOGNOTICE):
         """Adds a log entry to the Kodi log
 
         Parameters
@@ -93,7 +97,7 @@ class KodiHelper:
             msg = msg.encode('utf-8')
         xbmc.log('[%s] %s' % (self.plugin, msg.__str__()), level)
 
-    def show_message(self, message,title):
+    def show_message(self, message, title):
         dialog = xbmcgui.Dialog()
         dialog.notification(title, message, xbmcgui.NOTIFICATION_ERROR, 5000)
         return True
@@ -102,8 +106,8 @@ class KodiHelper:
         f = open("C:\\Users\\pinoe\\Desktop\\timvision.log", "a")
         f.writelines(msg)
         f.close()
-        
-    def get_local_string (self, string_id):
+
+    def get_local_string(self, string_id):
         """Returns the localized version of a string
 
         Parameters
@@ -122,7 +126,7 @@ class KodiHelper:
             locString = locString.encode('utf-8')
         return locString
 
-    def get_inputstream_addon (self):
+    def get_inputstream_addon(self):
         """Checks if the inputstream addon is installed & enabled.
            Returns the type of the inputstream addon used or None if not found
 

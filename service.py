@@ -6,12 +6,15 @@ from resources.lib.KodiHelper import KodiHelper
 from resources.lib.TimVisionHttpRequestHandler import TimVisionHttpRequestHandler
 
 # helper function to select an unused port on the host machine
+
+
 def select_unused_port():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(('127.0.0.1', 0))
     addr, port = sock.getsockname()
     sock.close()
     return port
+
 
 kodi_helper = KodiHelper()
 
@@ -23,7 +26,8 @@ kodi_helper.set_setting('timvision_service_port', str(tv_port))
 SocketServer.TCPServer.allow_reuse_address = True
 
 # configure the TimVision Data Server
-nd_server = SocketServer.TCPServer(('127.0.0.1', tv_port), TimVisionHttpRequestHandler)
+nd_server = SocketServer.TCPServer(
+    ('127.0.0.1', tv_port), TimVisionHttpRequestHandler)
 nd_server.server_activate()
 nd_server.timeout = 1
 

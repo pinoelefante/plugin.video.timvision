@@ -13,16 +13,14 @@ from resources.lib.TimVisionHttpSubRessourceHandler import TimVisionHttpSubResso
 
 kodi_helper = KodiHelper()
 
-timvision_session = TimVisionSession(
-    #cookie_path=kodi_helper.cookie_path,
-    #data_path=kodi_helper.data_path,
-    #verify_ssl=kodi_helper.get_ssl_verification_setting(),
-    #log_fn=kodi_helper.log
-)
+timvision_session = TimVisionSession()
 
 # get list of methods & instance form the sub ressource handler
-methods = [x for x, y in TimVisionHttpSubRessourceHandler.__dict__.items() if type(y) == FunctionType]
-sub_res_handler = TimVisionHttpSubRessourceHandler(kodi_helper=kodi_helper, timvision_session=timvision_session)
+methods = [x for x, y in TimVisionHttpSubRessourceHandler.__dict__.items()
+           if type(y) == FunctionType]
+sub_res_handler = TimVisionHttpSubRessourceHandler(
+    kodi_helper=kodi_helper, timvision_session=timvision_session)
+
 
 class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """ Represents the callable internal server that dispatches requests to TimVision"""
@@ -40,7 +38,8 @@ class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         # no existing method given
         if method not in methods:
-            self.send_error(404, 'Method "' + str(method) + '" not found. Available methods: ' + str(methods))
+            self.send_error(404, 'Method "' + str(method) +
+                            '" not found. Available methods: ' + str(methods))
             return
 
         # call method & get the result

@@ -11,9 +11,9 @@ kodi_helper = KodiHelper(
 )
 
 navigation = Navigation(
-    handle = plugin_handle,
-    plugin = plugin_dir,
-    kodi_helper = kodi_helper
+    handle=plugin_handle,
+    plugin=plugin_dir,
+    kodi_helper=kodi_helper
 )
 
 if __name__ == '__main__':
