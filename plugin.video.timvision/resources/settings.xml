@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+  <category label="Account">
+    <setting id="username" type="text" label="Username" default=""/>
+    <setting id="password" type="text" option="hidden" label="Password" default=""/>
+	  <setting id="prefer_hd" type="bool" label="Preferisci HD" value="false" default="false"/>
+    <setting id="timvision_service_port" value="8001" visible="false"/>
+  </category>
+</settings>
