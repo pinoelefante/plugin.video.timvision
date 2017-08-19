@@ -101,7 +101,7 @@ class TimVisionSession:
         self.log_myfile("Status Code: "+str(r.status_code))
         if r.status_code == 200:
             data = r.json()
-            self.log_myfile("Content: "+r.text)
+            self.log_myfile(msg=("Content: "+r.text))
             if isinstance(data, list):
                 self.log_myfile("JSON result is an array")
                 data = data[0]
@@ -184,8 +184,11 @@ class TimVisionSession:
 
     def log_myfile(self, msg, enable=True):
         if enable:
-            desktop = os.path.join(os.environ["HOMEPATH"], "Desktop")
-            filepath = os.path.join(desktop, "timvision.log")
-            f = open(filepath, "a")
-            f.writelines(msg + "\n")
-            f.close()
+            if(msg != None):
+                if isinstance(msg, unicode):
+                    msg = msg.encode('utf-8')
+                desktop = os.path.join(os.environ["HOMEPATH"], "Desktop")
+                filepath = os.path.join(desktop, "timvision.log")
+                f = open(filepath, "a")
+                f.writelines(msg + "\n")
+                f.close()

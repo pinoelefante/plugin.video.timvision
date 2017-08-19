@@ -7,3 +7,5 @@ kodistubs/*
 *.pyc
 *.pyo
 resources/lib/NavigationNF.py
+plugin.video.timvision/*
+plugin.video.netflix/*
