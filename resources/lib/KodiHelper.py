@@ -6,6 +6,7 @@
 import xbmcgui
 import xbmc
 import json
+import os
 from xbmcaddon import Addon
 
 
@@ -102,10 +103,13 @@ class KodiHelper:
         dialog.notification(title, message, xbmcgui.NOTIFICATION_ERROR, 5000)
         return True
 
-    def log_myfile(self, msg):
-        f = open("C:\\Users\\pinoe\\Desktop\\timvision.log", "a")
-        f.writelines(msg)
-        f.close()
+    def log_myfile(self, msg, enable=True):
+        if enable:
+            desktop = os.path.join(os.environ["HOMEPATH"], "Desktop")
+            filepath = os.path.join(desktop, "timvision.log")
+            f = open(filepath, "a")
+            f.writelines(msg + "\n")
+            f.close()
 
     def get_local_string(self, string_id):
         """Returns the localized version of a string
