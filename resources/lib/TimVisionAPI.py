@@ -1,6 +1,7 @@
 import json
 import threading
 import time
+import urllib
 from requests import session, cookies
 
 RECOM_TOP_VIEW = "TOP_VIEWED"
@@ -16,6 +17,8 @@ class TimVisionSession:
     app_version = '10.0.47'
     api_endpoint = session()
     license_endpoint = session()
+    user_http_header = "X-Avs-Username"
+    widevine_proxy_url = "https://license.cubovision.it/WidevineManager/WidevineManager.svc/GetLicense/{ContentIdAVS}/{AssetIdWD}/{CpId}/{Type}/{ClientTime}/{Channel}/{DeviceType}"
 
     def __init__(self):
         self.api_endpoint.headers.update({
@@ -28,7 +31,6 @@ class TimVisionSession:
             'Host' : 'license.timvision.it',
             'Origin' : 'https://www.timvision.it'
         })
-        #self.plugin_handle = plugin_handle
         self.setup()
 
     def setup(self):
@@ -44,26 +46,27 @@ class TimVisionSession:
             return True
         return False
     def load_app_settings(self):
-        url = 'https://www.timvision.it/TIM/'+self.app_version+'/PROD/IT/'+self.service_channel+'/ITALY/PROPERTIES?deviceType='+self.deviceType+'&serviceName='+self.service_name
-        r = self.api_endpoint.get(url)
-        if r.status_code == 200:
-            data = r.json()
-            if data['resultCode'] == 'OK':
-                self.license_acquisition_url = data['resultObj']['LICENSEACQUISITIONURL']
-                self.user_http_header = data['resultObj']['USER_REQ_HEADER_NAME']
-                self.widevine_proxy_url = data['resultObj']['WV_PROXY_URL']
-                return True
+        url = '/PROPERTIES?deviceType='+self.deviceType+'&serviceName='+self.service_name
+        data = self.api_send_request_tim(url)
+        if data!=None:
+            #self.license_acquisition_url = data['resultObj']['LICENSEACQUISITIONURL']
+            self.user_http_header = data['resultObj']['USER_REQ_HEADER_NAME']
+            #self.log_myfile("user_http_header = "+self.user_http_header)
+            self.widevine_proxy_url = data['resultObj']['WV_PROXY_URL']
+            return True
+        self.log_myfile("Fail to load app_settings")
         return False
     def login(self, username, password):
+        self.log_myfile("API_VERSION = "+self.app_version)
         data = {
             'username':username,
             'password':password,
             'customData':'{"customData":[{"name":"deviceType","value":'+self.deviceType+'},{"name":"deviceVendor","value":""},{"name":"accountDeviceModel","value":""},{"name":"FirmwareVersion","value":""},{"name":"Loader","value":""},{"name":"ResidentApp","value":""},{"name":"DeviceLanguage","value":"it"},{"name":"NetworkType","value":""},{"name":"DisplayDimension","value":""},{"name":"OSversion","value":"Windows 10"},{"name":"AppVersion","value":""},{"name":"DeviceRooted","value":""},{"name":"NetworkOperatoreName","value":""},{"name":"ServiceOperatorName","value":""},{"name":"Custom1","value":"Firefox"},{"name":"Custom2","value":54},{"name":"Custom3","value":"1920x1080"},{"name":"Custom4","value":"PC"},{"name":"Custom5","value":""},{"name":"Custom6","value":""},{"name":"Custom7","value":""},{"name":"Custom8","value":""},{"name":"Custom9","value":""}]}'
         }
         r = self.api_send_request("Login", method = 'POST', postData=data)
-        if r[0]:
-            self.api_endpoint.headers.__setitem__(self.user_http_header, r[1]["resultObj"])
-            self.sessionLoginHash = r[1]["extObject"]["hash"]
+        if r!=None:
+            self.api_endpoint.headers.__setitem__(self.user_http_header, r["resultObj"])
+            self.sessionLoginHash = r["extObject"]["hash"]
             self.avs_cookie = self.api_endpoint.cookies.get("avs_cookie")
             self.license_endpoint.headers.__setitem__('AVS_COOKIE',self.avs_cookie)
             #self.stop_check_session = threading.Event()
@@ -73,7 +76,7 @@ class TimVisionSession:
         return False
     def logout(self):
         r = self.api_send_request("Logout")
-        if r[0]:
+        if r!=None:
             self.api_endpoint.cookies.clear()
             self.sessionLoginHash = None
             self.api_endpoint.headers.pop(self.user_http_header, None)
@@ -89,21 +92,34 @@ class TimVisionSession:
                 query += "&"+key+"="+value
         return self.base_url+"/besc?channel="+self.service_channel+"&providerName=TELECOMITALIA&serviceName="+self.service_name+"&action="+action+"&deviceType="+self.deviceType+query
     def api_send_request(self, action, method = 'GET', queryData=None, postData=None):
+        url = self.api_url(action, queryData)
         r = None
-        if method == "POST":
-            r = self.api_endpoint.post(self.api_url(action, queryData), data=postData)
         if method == "GET":
-            r = self.api_endpoint.get(self.api_url(action, queryData))
-        if method == "OPTIONS":
-            r = self.api_endpoint.options(self.api_url(action, queryData))
+            r = self.api_endpoint.get(url)
+        else:
+            r = self.api_endpoint.post(url,postData)
         if r.status_code == 200:
             data = r.json()
             if data["resultCode"] == "OK":
-                return [True, data]
-        return [False]
-
+                return data
+        return None
+    def api_send_request_tim(self, url, method="GET", data={}):
+        if not url.startswith("https://"):
+            url="https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY"+url
+        r = None
+        if method == "GET":
+            r = self.api_endpoint.get(url)
+        else: 
+            r = self.api_endpoint.post(url, data)
+        if r.status_code == 200:
+            data = r.json()
+            if isinstance(data, list):
+                data = data[0]
+            if data["resultCode"]=="OK":
+                return data
+        return None
     def recommended_video(self, category):
-        url = "https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY/TRAY/RECOM?deviceType="+self.deviceType+"&serviceName="+self.service_name
+        url = "/TRAY/RECOM?deviceType="+self.deviceType+"&serviceName="+self.service_name
         query = {
             "dataSet":"RICH",
             "orderBy":"year",
@@ -113,30 +129,18 @@ class TimVisionSession:
             "recomType":category,
             "maxResults":"30"
         }
-        r = self.api_endpoint.get(url, params = query)
-        if r.status_code == 200:
-            data = r.json()
-            if data["resultCode"] == "OK":
-                return data["resultObj"]["containers"]
-        return None
+        url+="&"+urllib.urlencode(query)
+        return self.__get_contents(url)
     def load_serie_seasons(self, serieId):
-        url = "https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY/DETAILS?contentId="+str(serieId)+"&type=SERIES&renderEngine=DELTA&deviceType="+self.deviceType+"&serviceName="+self.service_name
-        r = self.api_endpoint.get(url)
-        if r.status_code == 200:
-            data = r.json()[0]
-            if data["resultCode"] == "OK":
-                return data["resultObj"]["containers"]
-        return None
+        url = "/DETAILS?contentId="+str(serieId)+"&type=SERIES&renderEngine=DELTA&deviceType="+self.deviceType+"&serviceName="+self.service_name
+        return self.__get_contents(url)
     def load_serie_episodes(self, seasonId):
-        url = "https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY/DETAILS?renderEngine=DELTA&deviceType="+self.deviceType+"&serviceName="+self.service_name+"&contentId="+seasonId+"&type=SEASON"
-        r = self.api_endpoint.get(url)
-        if r.status_code == 200:
-            data = r.json()[0]
-            if data["resultCode"] == "OK":
-                containers = data["resultObj"]["containers"]
-                for cont in containers:
-                    if cont["layout"] == "SEASON":
-                        return cont["items"]
+        url = "/DETAILS?renderEngine=DELTA&deviceType="+self.deviceType+"&serviceName="+self.service_name+"&contentId="+seasonId+"&type=SEASON"
+        data = self.__get_contents(url)
+        if data!=None:
+            for cont in data:
+                if cont["layout"] == "SEASON":
+                    return cont["items"]
         return None
     def check_session(self, stop_event):
         while not stop_event.is_set():
@@ -150,7 +154,6 @@ class TimVisionSession:
             return {
                 'AVS_COOKIE':self.avs_cookie,
                 "mpd_file":mpdContent["mpd"],
-                #"cpId":mpdContent["cpId"],
                 "widevine_url":self.widevine_proxy_url.replace("{ContentIdAVS}",contentId).replace("{AssetIdWD}",assetIdWd).replace("{CpId}",mpdContent["cpId"]).replace("{Type}","VOD").replace("{ClientTime}",str(long(time.time()*1000))).replace("{Channel}",self.service_channel).replace("{DeviceType}","CHROME").replace('http://', 'https://')
             }
         return None
@@ -159,27 +162,38 @@ class TimVisionSession:
         partial = partial[0:partial.find("/")]
         return partial
     def get_mpd_file(self,contentId,videoType):
-        url = "https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY/PLAY?contentId="+contentId+"&deviceType=CHROME&serviceName="+self.service_name+"&type="+videoType
-        r = self.api_endpoint.get(url)
-        if r.status_code == 200:
-            data = r.json()
+        url = "/PLAY?contentId="+contentId+"&deviceType=CHROME&serviceName="+self.service_name+"&type="+videoType
+        data = self.api_send_request_tim(url)
+        if data!=None:
             cpId = data["resultObj"]["cp_id"]
             mpd = data["resultObj"]["src"]
             return {"cpId": cpId, "mpd":mpd}
         return None
-    def load_contents(self, category, begin=0, progress=49, load_all = False):
+    def load_all_contents(self, category, begin=0, progress=49):
         end = int(begin)+progress
-        url = "https://www.timvision.it/TIM/"+self.app_version+"/PROD_WEB/IT/"+self.service_channel+"/ITALY/TRAY/SEARCH/VOD?from="+str(begin)+"&to="+str(end)+"&sorting=order:title+asc&categoryName="+category+"&offerType=SVOD&deviceType="+self.deviceType+"&serviceName="+self.service_name
-        r = self.api_endpoint.get(url)
-        if r.status_code == 200:
-            data = r.json()
-            if data["resultCode"] == "OK":
-                maxCount = data["resultObj"]["total"]
-                movies = data["resultObj"]["containers"]
-                if load_all:
-                    if end<=maxCount:
-                        other_movie = self.load_contents(begin=end, load_all=load_all, category=category)
-                        if other_movie!=None:
-                            movies.extend(other_movie)
-                return movies
+        url = "/TRAY/SEARCH/VOD?from="+str(begin)+"&to="+str(end)+"&sorting=order:title+asc&categoryName="+category+"&offerType=SVOD&deviceType="+self.deviceType+"&serviceName="+self.service_name
+        data = self.api_send_request_tim(url)
+        if data!=None:
+            maxCount = data["resultObj"]["total"]
+            movies = data["resultObj"]["containers"]
+            if end<=maxCount:
+                other_movie = self.load_all_contents(begin=end, category=category)
+                if other_movie!=None:
+                    movies.extend(other_movie)
+            return movies
         return None
+    def get_menu_categories(self):
+        url = "/menu?deviceType="+self.deviceType+"&serviceName="+self.service_name
+        return self.__get_contents(url)
+    def get_page(self, page):
+        url = "/PAGE/"+page+"?deviceType="+self.deviceType+"&serviceName="+self.service_name
+        return self.__get_contents(url)
+    def __get_contents(self, url,data={}):
+        data = self.api_send_request_tim(url,data=data)
+        if data!=None:
+            return data["resultObj"]["containers"]
+        return None
+    def log_myfile(self, msg):
+        f = open("C:\\Users\\pinoe\\Desktop\\timvision.log", "a")
+        f.writelines(msg+"\n")
+        f.close()

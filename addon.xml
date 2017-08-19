@@ -13,7 +13,7 @@
     <description lang="it">TIMVision Video OnDemand Addon (based on plugin.video.netflix)</description>
     <disclaimer lang="it">Some parts of this addon may not be legal in your country of residence - please check with your local laws before installing.</disclaimer>
     <assets>
-      <icon>resources\icon.png</icon>
+      <icon>resources\logo.png</icon>
       <fanart>resources\fanart.png</fanart>
     </assets>
     <platform>all</platform>

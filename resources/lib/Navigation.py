@@ -19,31 +19,46 @@ class Navigation:
         params = self.parameters_string_to_dict(parameters)
         params_count = len(params)
         if params_count == 0:
-            self.create_home_page()
+            #self.create_home_page()
+            self.create_home_online()
         else:
             if params.has_key("page"):
                 page = params.get("page")
+                #TODO rimuovere RECOMMENDED
                 if page == "RECOMMENDED":
-                    self.create_recommended_page()
-                if page == TimVisionAPI.RECOM_TOP_VIEW or page == TimVisionAPI.RECOM_MOST_RECENT or page == TimVisionAPI.RECOM_FOR_YOU or page == TimVisionAPI.RECOM_EXPIRING:
-                    items = self.call_timvision_service({"method":"recommended_video", "category":page})
-                    self.add_items_to_folder(items)
+                    if params.has_key("sub"):
+                        subPage = params.get("sub")
+                        items = self.call_timvision_service({"method":"recommended_video", "category":subPage})
+                        self.add_items_to_folder(items)
+                    else:
+                        self.create_recommended_page()
+                if page == "HOME":
+                    category_id = params.get("category_id")
+                    self.create_category_page(pageId=category_id)
                 if page == "CINEMA":
-                    #loadAll = self.kodi_helper.get_setting("film_load_all")
+                    category_id = params.get("category_id")
+                    self.create_category_page(pageId=category_id,ha_elenco=True,actionName='CINEMA_ELENCO')
+                if page == "CINEMA_ELENCO":
                     items = self.call_timvision_service({"method":"load_movies", "begin":"0", "load_all":"true"})
                     self.add_items_to_folder(items)
-                if page == "SERIETV":
-                    #loadAll = self.kodi_helper.get_setting("serie_load_all")
+                if page == "SERIE TV":
+                    category_id = params.get("category_id")
+                    self.create_category_page(pageId=category_id,ha_elenco=True,actionName='SERIE_ELENCO')
+                if page == "SERIE_ELENCO":
                     items = self.call_timvision_service({"method":"load_series", "begin":"0", "load_all":"true"})
                     self.add_items_to_folder(items)
-                    pass
                 if page == "INTRATTENIMENTO":
+                    category_id = params.get("category_id")
+                    self.create_category_page(pageId=category_id)
                     pass
-                if page == "KIDS":
-                    #loadAll = self.kodi_helper.get_setting("serie_load_all")
+                if page == "BAMBINI":
+                    category_id = params.get("category_id")
+                    self.create_category_page(pageId=category_id,ha_elenco=True,actionName='BAMBINI_ELENCO')
+                    pass
+                if page == "BAMBINI_ELENCO":
                     items = self.call_timvision_service({"method":"load_kids", "begin":"0", "load_all":"true"})
                     self.add_items_to_folder(items)
-                    pass
+
             if params.has_key("action"):
                 action = params.get("action")
                 if action == "apri_serie":
@@ -74,16 +89,39 @@ class Navigation:
         kidDir = xbmcgui.ListItem(label='Bambini')
         xbmcplugin.addDirectoryItem(isFolder=True, handle=self.plugin_handle,listitem=kidDir,url=self.plugin_dir+"?page=KIDS")
         xbmcplugin.endOfDirectory(handle = self.plugin_handle)
+    
+    def create_home_online(self):
+        categories = self.call_timvision_service({"method":"get_categories"})
+        if categories == None:
+            self.kodi_helper.show_message("Controlla di avere la connessione attiva. Se l'errore persiste, contatta lo sviluppatore del plugin","Errore")
+            return
+        for cat in categories:
+            label = cat["metadata"]["label"]
+            if label == "A NOLEGGIO":
+                continue
+            li = xbmcgui.ListItem(label=label.lower().capitalize())
+            uri = cat["actions"][0]["uri"]
+            pageId = uri[6:uri.find("?")]
+            xbmcplugin.addDirectoryItem(handle=self.plugin_handle,url=self.plugin_dir+"?page="+label+"&category_id="+pageId, isFolder=True, listitem=li)
+        xbmcplugin.endOfDirectory(handle=self.plugin_handle)
+    def create_category_page(self, pageId, ha_elenco=False, actionName=''):
+        if ha_elenco:
+            li = xbmcgui.ListItem(label='Elenco completo')
+            xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=self.plugin_dir+"?page="+actionName,listitem=li,isFolder=True)
+        
+        #TODO caricamento collezioni
 
+        xbmcplugin.endOfDirectory(handle=self.plugin_handle)
+        return
     def create_recommended_page(self):
         top_views = xbmcgui.ListItem(label="Piu' visti")
         most_recents = xbmcgui.ListItem(label="Piu' recenti")
         for_you = xbmcgui.ListItem(label='Consigliati per te')
         expiring = xbmcgui.ListItem(label='In scadenza')
-        xbmcplugin.addDirectoryItem(handle = self.plugin_handle, isFolder=True, listitem = top_views, url = self.plugin_dir+"?page="+TimVisionAPI.RECOM_TOP_VIEW)
-        xbmcplugin.addDirectoryItem(handle = self.plugin_handle, isFolder=True, listitem = most_recents, url = self.plugin_dir+"?page="+TimVisionAPI.RECOM_MOST_RECENT)
-        xbmcplugin.addDirectoryItem(handle = self.plugin_handle, isFolder=True, listitem = for_you, url = self.plugin_dir+"?page="+TimVisionAPI.RECOM_FOR_YOU)
-        xbmcplugin.addDirectoryItem(handle = self.plugin_handle, isFolder=True, listitem = expiring, url = self.plugin_dir+"?page="+TimVisionAPI.RECOM_EXPIRING)
+        xbmcplugin.addDirectoryItem(handle = self.plugin_handle, isFolder=True, listitem = top_views, url = self.plugin_dir+"?page=RECOMMENDED&sub="+TimVisionAPI.RECOM_TOP_VIEW)
+        xbmcplugin.addDirectoryItem(handle = self.plugin_handle, isFolder=True, listitem = most_recents, url = self.plugin_dir+"?page=RECOMMENDED&sub="+TimVisionAPI.RECOM_MOST_RECENT)
+        xbmcplugin.addDirectoryItem(handle = self.plugin_handle, isFolder=True, listitem = for_you, url = self.plugin_dir+"?page=RECOMMENDED&sub="+TimVisionAPI.RECOM_FOR_YOU)
+        xbmcplugin.addDirectoryItem(handle = self.plugin_handle, isFolder=True, listitem = expiring, url = self.plugin_dir+"?page=RECOMMENDED&sub="+TimVisionAPI.RECOM_EXPIRING)
         xbmcplugin.endOfDirectory(handle = self.plugin_handle)
     
     def create_list_item(self, movie, is_episode = False):
@@ -104,7 +142,6 @@ class Navigation:
             "poster":movie["metadata"]["imageUrl"]
         })
         if is_episode:
-            li.setLabel(movie["metadata"]["episodeNumber"]+" - "+movie["metadata"]["title"])
             li.setInfo("video", 
             {
                 "episode": movie["metadata"]["episodeNumber"],
@@ -135,11 +172,13 @@ class Navigation:
                 if not _is_episodes and videoType=="EPISODE":
                     _is_episodes = True
             xbmcplugin.addDirectoryItem(handle=self.plugin_handle,isFolder=folder, listitem=li, url=self.plugin_dir+"?"+url)
-        if not _is_episodes:
-            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+        if _is_episodes:
+            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_EPISODE)
+        else:
             xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
-            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
+            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
             xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
+            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
         return True
     def populate_serie_seasons(self, serieId):
