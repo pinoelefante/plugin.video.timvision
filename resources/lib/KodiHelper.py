@@ -40,23 +40,6 @@ class KodiHelper:
         """Returns a fresh addon instance"""
         return Addon()
 
-    def refresh(self):
-        """Refresh the current list"""
-        return xbmc.executebuiltin('Container.Refresh')
-
-    def show_missing_inputstream_addon_notification(self):
-        """Shows notification that the inputstream addon couldn't be found
-
-        Returns
-        -------
-        bool
-            Dialog shown
-        """
-        dialog = xbmcgui.Dialog()
-        dialog.notification(self.get_local_string(string_id=30028), self.get_local_string(
-            string_id=30029), xbmcgui.NOTIFICATION_ERROR, 5000)
-        return True
-
     def get_setting(self, key):
         return self.get_addon().getSetting(key)
 
@@ -69,7 +52,12 @@ class KodiHelper:
             Setting could be set or not
         """
         return self.get_addon().setSetting(key, value)
-
+    def show_text_field(self, label=""):
+        dlg = xbmcgui.Dialog()
+        return dlg.input(label, type=xbmcgui.INPUT_ALPHANUM)
+    def show_password_field(self):
+        dlg = xbmcgui.Dialog()
+        return dlg.input("Password", type=xbmcgui.INPUT_ALPHANUM, option=xbmcgui.ALPHANUM_HIDE_INPUT)
     def get_credentials(self):
         """Returns the users stored credentials
 
@@ -82,7 +70,9 @@ class KodiHelper:
             'username': self.get_addon().getSetting('username'),
             'password': self.get_addon().getSetting('password')
         }
-
+    def set_credentials(self,username,password):
+        self.set_setting("username", username)
+        self.set_setting("password", password)
     def log(self, msg, level=xbmc.LOGNOTICE):
         """Adds a log entry to the Kodi log
 
@@ -98,9 +88,9 @@ class KodiHelper:
             msg = msg.encode('utf-8')
         xbmc.log('[%s] %s' % (self.plugin, msg.__str__()), level)
 
-    def show_message(self, message, title):
+    def show_message(self, message, title, level=xbmcgui.NOTIFICATION_ERROR):
         dialog = xbmcgui.Dialog()
-        dialog.notification(title, message, xbmcgui.NOTIFICATION_ERROR, 5000)
+        dialog.notification(title, message, level, 3000)
         return True
 
     def log_myfile(self, msg, enable=True):
@@ -155,3 +145,8 @@ class KodiHelper:
             if data['result']['addon']['enabled'] == True:
                 return addon_type
         return None
+    
+    def open_settings(self):
+        self.get_addon().openSettings()
+        return
+    

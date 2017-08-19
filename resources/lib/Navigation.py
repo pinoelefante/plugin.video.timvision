@@ -17,10 +17,13 @@ class Navigation:
         self.kodi_helper = kodi_helper
 
     def router(self, parameters):
+        if not self.verifica_login():
+            self.kodi_helper.open_settings()
+            return
+
         params = self.parameters_string_to_dict(parameters)
         params_count = len(params)
         if params_count == 0:
-            # self.create_home_page()
             self.create_main_page()
         else:
             if params.has_key("page"):
@@ -47,12 +50,10 @@ class Navigation:
                 elif page == "INTRATTENIMENTO":
                     category_id = params.get("category_id")
                     self.create_category_page(pageId=category_id)
-                    pass
                 elif page == "BAMBINI":
                     category_id = params.get("category_id")
                     self.create_category_page(
                         pageId=category_id, ha_elenco=True, actionName='BAMBINI_ELENCO')
-                    pass
                 elif page == "BAMBINI_ELENCO":
                     items = self.call_timvision_service(
                         {"method": "load_kids", "begin": "0", "load_all": "true"})
@@ -75,7 +76,19 @@ class Navigation:
                 elif action == "open_page":
                     uri = params.get("uri")
                     self.open_category_page(uri)
-
+    def verifica_login(self, count=0):
+        logged = self.call_timvision_service({"method":"is_logged"}) 
+        if not logged:
+            credentials = self.kodi_helper.get_credentials()
+            if credentials["username"]!="" and credentials["password"]!="":
+                logged = self.call_timvision_service({"method":"login","username":credentials["username"],"password":credentials["password"]})
+            if not logged:
+                if count == 0:
+                    username = self.kodi_helper.show_text_field("Email")
+                    password = self.kodi_helper.show_password_field()
+                    self.kodi_helper.set_credentials(username,password)
+                    return self.verifica_login(count+1)
+        return logged
     def parameters_string_to_dict(self, parameters):
         return dict(urlparse.parse_qsl(parameters[1:]))
 
@@ -83,7 +96,7 @@ class Navigation:
         categories = self.call_timvision_service({"method": "get_categories"})
         if categories == None:
             self.kodi_helper.show_message(
-                "Controlla di avere la connessione attiva. Se l'errore persiste, contatta lo sviluppatore del plugin", "Errore")
+                "Controlla di avere la connessione attiva. Se l'errore persiste, contatta lo sviluppatore del plugin", "Errore",xbmcgui.NOTIFICATION_ERROR)
             return
         for cat in categories:
             label = cat["metadata"]["label"]
@@ -160,7 +173,7 @@ class Navigation:
             return
         if len(items) == 0:
             self.kodi_helper.show_message(
-                "Non sono presenti contenuti? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Elenco vuoto")
+                "Non sono presenti contenuti? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Elenco vuoto",xbmcgui.NOTIFICATION_INFO)
             return
         _is_episodes = False
         for container in items:
@@ -205,7 +218,7 @@ class Navigation:
         count = len(items)
         if count == 0:
             self.kodi_helper.show_message(
-                "Non sono presenti stagioni? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Possibile errore")
+                "Non sono presenti stagioni? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Possibile errore",xbmcgui.NOTIFICATION_INFO)
             return
 
         for season in items:
@@ -226,19 +239,15 @@ class Navigation:
             {"method": "get_license_video", "contentId": contentId, "videoType": videoType})
         if license_info == None:
             return
-        cookie = license_info["AVS_COOKIE"]
         mpd = license_info["mpd_file"]
         license_address = license_info["widevine_url"]
-
-        self.kodi_helper.log("AVS_COOKIE = " + cookie + "\nmpd = " +
-                             mpd + "\n" + "widevine = " + license_address)
 
         inputstream_addon = self.kodi_helper.get_inputstream_addon()
         if inputstream_addon == None:
             self.kodi_helper.log("inputstream_addon not found")
             return
         my_license_address = self.get_timvision_service_url()+"?action=get_license&license_url="+urllib.quote(license_address)
-        play_item = xbmcgui.ListItem(path=mpd)  # manifest = mpd url
+        play_item = xbmcgui.ListItem(path=mpd)
         play_item.setContentLookup(False)
         play_item.setMimeType('application/dash+xml')
         play_item.setProperty(inputstream_addon + '.stream_headers',
@@ -246,8 +255,6 @@ class Navigation:
         play_item.setProperty(inputstream_addon +
                               '.license_type', 'com.widevine.alpha')
         play_item.setProperty(inputstream_addon + '.manifest_type', 'mpd')
-        #play_item.setProperty(inputstream_addon + '.license_key', license_address +
-        #                      '||R{SSM}|' + 'AVS_COOKIE=' + cookie)  # '||b{SSM}!b{SID}|'
         play_item.setProperty(inputstream_addon + '.license_key', my_license_address+'||R{SSM}|')
         play_item.setProperty('inputstreamaddon', "inputstream.adaptive")
         xbmcplugin.setResolvedUrl(

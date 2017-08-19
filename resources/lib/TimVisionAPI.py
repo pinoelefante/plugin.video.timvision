@@ -16,6 +16,7 @@ class TimVisionSession:
     api_endpoint = session()
     license_endpoint = session()
     user_http_header = "X-Avs-Username"
+    sessionLoginHash = None
     widevine_proxy_url = "https://license.cubovision.it/WidevineManager/WidevineManager.svc/GetLicense/{ContentIdAVS}/{AssetIdWD}/{CpId}/{Type}/{ClientTime}/{Channel}/{DeviceType}"
 
     def __init__(self):
@@ -66,9 +67,9 @@ class TimVisionSession:
             self.api_endpoint.headers.__setitem__(
                 self.user_http_header, r["resultObj"])
             self.sessionLoginHash = r["extObject"]["hash"]
-            self.avs_cookie = self.api_endpoint.cookies.get("avs_cookie")
+            avs_cookie = self.api_endpoint.cookies.get("avs_cookie")
             self.license_endpoint.headers.__setitem__(
-                'AVS_COOKIE', self.avs_cookie)
+                'AVS_COOKIE', avs_cookie)
             #self.stop_check_session = threading.Event()
             #check_thread = threading.Thread(target=self.check_session, args=(self.stop_check_session))
             # check_thread.start()
@@ -133,7 +134,6 @@ class TimVisionSession:
         if mpdContent != None:
             assetIdWd = self.get_assetIdWd(mpdContent["mpd"])
             return {
-                'AVS_COOKIE': self.avs_cookie,
                 "mpd_file": mpdContent["mpd"],
                 "widevine_url": self.widevine_proxy_url.replace("{ContentIdAVS}", contentId).replace("{AssetIdWD}", assetIdWd).replace("{CpId}", mpdContent["cpId"]).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", self.service_channel).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
             }

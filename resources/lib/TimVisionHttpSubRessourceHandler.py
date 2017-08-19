@@ -17,6 +17,9 @@ class TimVisionHttpSubRessourceHandler:
         if user != '' and passw != '':
             self.timvision_session.login(user, passw)
 
+    def is_logged(self, params):
+        return self.timvision_session.is_logged()
+
     def login(self, params):
         email = params.get('username', [''])[0]
         password = params.get('password', [''])[0]
