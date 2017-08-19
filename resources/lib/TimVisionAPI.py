@@ -101,7 +101,7 @@ class TimVisionSession:
         self.log_myfile("Status Code: "+str(r.status_code))
         if r.status_code == 200:
             data = r.json()
-            self.log_myfile("Response content:\n"+r.text)
+            self.log_myfile("Content: "+r.text)
             if isinstance(data, list):
                 self.log_myfile("JSON result is an array")
                 data = data[0]
