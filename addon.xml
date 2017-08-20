@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.timvision" name="TimVision" version="0.0.1" provider-name="pinoelefante">
+<addon id="plugin.video.timvision" name="TimVision" version="1.0.1" provider-name="pinoelefante">
   <requires>
     <import addon="xbmc.python" version="2.24.0"/>
     <import addon="script.module.requests" version="2.12.4"/>
@@ -10,16 +10,18 @@
   <extension point="xbmc.service" library="service.py" start="login" />
   <extension point="xbmc.addon.metadata">
     <summary lang="it">TIMVision</summary>
-    <description lang="it">TIMVision Video OnDemand Addon (based on plugin.video.netflix)</description>
+    <description lang="it">TIMVision Video OnDemand Addon (inspired by plugin.video.netflix)</description>
     <disclaimer lang="it">Some parts of this addon may not be legal in your country of residence - please check with your local laws before installing.</disclaimer>
     <assets>
       <icon>resources\logo.png</icon>
       <fanart>resources\fanart.png</fanart>
     </assets>
     <platform>all</platform>
-    <license>MIT</license>
+    <license>GPL</license>
     <source>https://github.com/pinoelefante/plugin.video.timvision</source>
-    <news>v1.0.0 (2017-08-19)
+    <news>v1.0.1 (2017-08-20)
+    -Riproduzione in alta definizione
+    v1.0.0 (2017-08-19)
     - Riproduzione video funzionante
     </news>
   </extension>
