@@ -3,7 +3,10 @@
   <category label="Account">
     <setting id="username" type="text" label="Username" default=""/>
     <setting id="password" type="text" option="hidden" label="Password" default=""/>
-	  <setting id="prefer_hd" type="bool" label="Preferisci HD" value="false" default="false"/>
+	  <setting id="prefer_hd" type="bool" label="Preferisci HD" value="true" default="true"/>
+    <!-- Actions -->
+    <setting id="logout" type="action" label="Logout" action="RunPlugin(plugin://plugin.video.timvision/?action=logout)" option="close"/>
+    <!-- Hidden -->
     <setting id="timvision_service_port" value="8001" visible="false"/>
   </category>
 </settings>

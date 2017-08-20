@@ -84,7 +84,8 @@ class TimVisionSession:
             self.api_endpoint.cookies.clear()
             self.sessionLoginHash = None
             self.api_endpoint.headers.pop(self.user_http_header, None)
-            self.stop_check_session.set()
+            if self.stop_check_session!=None:
+                self.stop_check_session.set()
             return True
         return False
 
@@ -188,7 +189,7 @@ class TimVisionSession:
             return data["resultObj"]["containers"]
         return None
 
-    def log_myfile(self, msg,filename="timvision.log",enable=False):
+    def log_myfile(self, msg,filename="timvision.log",enable=True):
         if enable:
             if(msg != None):
                 if isinstance(msg, unicode):
@@ -205,7 +206,6 @@ class TimVisionSession:
         self.log_myfile("Trying to get widevine license", filename="widevine.log")
         resp = self.license_endpoint.post(widevine_url, data=widevineRequest)
         self.log_myfile("Status code: "+str(resp.status_code), filename="widevine.log")
-        self.log_myfile("widevine license")
         if resp.status_code == 200:
             self.log_myfile("We get it! WOW", filename="widevine.log")
             return resp.content

@@ -72,12 +72,14 @@ class Navigation:
                 elif action == "play_item":
                     contentId = params.get("contentId")
                     videoType = params.get("videoType")
-                    has_hd = bool(params.get("has_hd", False))
-                    prefer_hd = bool(self.kodi_helper.get_setting("prefer_hd"))
+                    has_hd = params.get("has_hd", "false")
+                    prefer_hd = self.kodi_helper.get_setting("prefer_hd")
                     self.play_video(contentId, videoType, has_hd, prefer_hd)
                 elif action == "open_page":
                     uri = params.get("uri")
                     self.open_category_page(uri)
+                elif action == "logout":
+                    self.call_timvision_service({"method":"logout"})
 
     def verifica_login(self, count=0):
         logged = self.call_timvision_service({"method":"is_logged"}) 
@@ -244,7 +246,7 @@ class Navigation:
                     handle=self.plugin_handle, url=self.plugin_dir + "?" + url, listitem=li, isFolder=True)
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
 
-    def play_video(self, contentId, videoType,hasHd=False,preferHD=False):
+    def play_video(self, contentId, videoType,hasHd="false",preferHD="false"):
         license_info = self.call_timvision_service(
             {"method": "get_license_video", "contentId": contentId, "videoType": videoType,"prefer_hd":preferHD,"has_hd":hasHd})
         if license_info == None:

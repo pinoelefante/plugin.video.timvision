@@ -1,6 +1,6 @@
 import xbmc
 import urllib
-
+import utils
 
 class TimVisionHttpSubRessourceHandler:
     """ Represents the callable internal server routes & translates/executes them to requests for Netflix"""
@@ -26,6 +26,9 @@ class TimVisionHttpSubRessourceHandler:
         if email != '' and password != '':
             return self.timvision_session.login(email, password)
         return None
+    
+    def logout(self, params):
+        return self.timvision_session.logout()
 
     def load_serie_seasons(self, params):
         serieId = params.get('serieId')[0]
@@ -38,8 +41,8 @@ class TimVisionHttpSubRessourceHandler:
     def get_license_video(self, params):
         contentid = params.get("contentId")[0]
         videoType = params.get("videoType")[0]
-        prefer_hd = bool(params.get("prefer_hd",[False])[0])
-        has_hd = bool(params.get("has_hd",[False])[0])
+        prefer_hd = utils.get_bool(params.get("prefer_hd",["false"])[0])
+        has_hd = utils.get_bool(params.get("has_hd",["false"])[0])
         return self.timvision_session.get_license_info(contentid, videoType,prefer_hd,has_hd)
 
     def load_movies(self, params={}):
