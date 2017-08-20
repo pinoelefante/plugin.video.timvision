@@ -72,10 +72,13 @@ class Navigation:
                 elif action == "play_item":
                     contentId = params.get("contentId")
                     videoType = params.get("videoType")
-                    self.play_video(contentId, videoType)
+                    has_hd = bool(params.get("has_hd", False))
+                    prefer_hd = bool(self.kodi_helper.get_setting("prefer_hd"))
+                    self.play_video(contentId, videoType, has_hd, prefer_hd)
                 elif action == "open_page":
                     uri = params.get("uri")
                     self.open_category_page(uri)
+
     def verifica_login(self, count=0):
         logged = self.call_timvision_service({"method":"is_logged"}) 
         if not logged:
@@ -167,6 +170,12 @@ class Navigation:
 
     def is_content_item(self, l):
         return l == "SERIES_ITEM" or l == "MOVIE_ITEM" or l == "EPISODE"
+    
+    def video_has_hd(self, video):
+        for videoType in video["metadata"]["videoType"]:
+            if videoType == "HD":
+                return True
+        return False
 
     def add_items_to_folder(self, items):
         if items == None:
@@ -187,9 +196,10 @@ class Navigation:
             else:
                 videoType = "MOVIE" if container["layout"] == "MOVIE_ITEM" else "EPISODE"
                 contentId = container["id"] if videoType == "MOVIE" else container["metadata"]["contentId"]
+                has_hd = self.video_has_hd(container)
                 li.setProperty('isPlayable', 'true')
                 url = "action=play_item&contentId=" + \
-                    str(contentId) + "&videoType=" + videoType
+                    str(contentId) + "&videoType=" + videoType+"&has_hd="+str(has_hd)
                 if not _is_episodes and videoType == "EPISODE":
                     _is_episodes = True
             xbmcplugin.addDirectoryItem(
@@ -234,9 +244,9 @@ class Navigation:
                     handle=self.plugin_handle, url=self.plugin_dir + "?" + url, listitem=li, isFolder=True)
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
 
-    def play_video(self, contentId, videoType):
+    def play_video(self, contentId, videoType,hasHd=False,preferHD=False):
         license_info = self.call_timvision_service(
-            {"method": "get_license_video", "contentId": contentId, "videoType": videoType})
+            {"method": "get_license_video", "contentId": contentId, "videoType": videoType,"prefer_hd":preferHD,"has_hd":hasHd})
         if license_info == None:
             return
         mpd = license_info["mpd_file"]

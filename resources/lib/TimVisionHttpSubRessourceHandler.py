@@ -8,7 +8,7 @@ class TimVisionHttpSubRessourceHandler:
     def __init__(self, kodi_helper, timvision_session):
         self.kodi_helper = kodi_helper
         self.timvision_session = timvision_session
-        self.prefetch_login()
+        #self.prefetch_login()
 
     def prefetch_login(self):
         credentials = self.kodi_helper.get_credentials()
@@ -27,10 +27,6 @@ class TimVisionHttpSubRessourceHandler:
             return self.timvision_session.login(email, password)
         return None
 
-    def recommended_video(self, params):
-        pageType = params.get('category')[0]
-        return self.timvision_session.recommended_video(pageType)
-
     def load_serie_seasons(self, params):
         serieId = params.get('serieId')[0]
         return self.timvision_session.load_serie_seasons(serieId)
@@ -42,7 +38,9 @@ class TimVisionHttpSubRessourceHandler:
     def get_license_video(self, params):
         contentid = params.get("contentId")[0]
         videoType = params.get("videoType")[0]
-        return self.timvision_session.get_license_info(contentid, videoType)
+        prefer_hd = bool(params.get("prefer_hd",[False])[0])
+        has_hd = bool(params.get("has_hd",[False])[0])
+        return self.timvision_session.get_license_info(contentid, videoType,prefer_hd,has_hd)
 
     def load_movies(self, params={}):
         begin = int(params.get("begin", ["0"])[0])
@@ -67,6 +65,6 @@ class TimVisionHttpSubRessourceHandler:
         url = params.get("url")[0]
         return self.timvision_session.get_contents(url)
 
-    def get_license(self,params,rawdata):
+    def get_license(self,params,rawdata): #rawdata is widevine payload
         url = urllib.unquote(params.get("license_url")[0])
         return self.timvision_session.get_widevine_response(rawdata,url)
