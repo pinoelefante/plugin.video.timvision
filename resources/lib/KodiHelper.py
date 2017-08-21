@@ -92,18 +92,7 @@ class KodiHelper:
         dialog = xbmcgui.Dialog()
         dialog.notification(title, message, level, 3000)
         return True
-
-    def log_myfile(self, msg,filename="timvision.log",enable=True):
-        if enable:
-            if(msg != None):
-                if isinstance(msg, unicode):
-                    msg = msg.encode('utf-8')
-                desktop = os.path.join(os.environ["HOMEPATH"], "Desktop")
-                filepath = os.path.join(desktop, filename)
-                f = open(filepath, "a")
-                f.writelines(msg + "\n")
-                f.close()
-
+    
     def get_local_string(self, string_id):
         """Returns the localized version of a string
 

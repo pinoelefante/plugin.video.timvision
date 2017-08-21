@@ -3,6 +3,7 @@ import threading
 import time
 import urllib
 import os
+from resources.lib import utils as logger
 from requests import session, cookies
 
 
@@ -99,14 +100,15 @@ class TimVisionSession:
         if not url.startswith("https://"):
             url = baseUrl + url
         url = self.__compile_url(url)
-        self.log_myfile("Sending "+method+" request to "+url)
+        
+        logger.log_on_desktop_file("Sending "+method+" request to "+url)
         r = self.api_endpoint.get(url, params=data) if method == "GET" else self.api_endpoint.post(url, data=data)
-        self.log_myfile("Status Code: "+str(r.status_code))
+        logger.log_on_desktop_file("Status Code: "+str(r.status_code))
         if r.status_code == 200:
             data = r.json()
-            self.log_myfile(msg=("Content: "+r.text))
+            logger.log_on_desktop_file(msg=("Content: "+r.text))
             if isinstance(data, list):
-                self.log_myfile("JSON result is an array")
+                logger.log_on_desktop_file("JSON result is an array")
                 data = data[0]
             if data["resultCode"] == "OK":
                 return data
@@ -189,25 +191,14 @@ class TimVisionSession:
             return data["resultObj"]["containers"]
         return None
 
-    def log_myfile(self, msg,filename="timvision.log",enable=True):
-        if enable:
-            if(msg != None):
-                if isinstance(msg, unicode):
-                    msg = msg.encode('utf-8')
-                desktop = os.path.join(os.environ["HOMEPATH"], "Desktop")
-                filepath = os.path.join(desktop, filename)
-                f = open(filepath, "a")
-                f.writelines(msg + "\n")
-                f.close()
-
     def get_widevine_response(self, widevineRequest, widevine_url, count=0):
         if count == 3:
             return None
-        self.log_myfile("Trying to get widevine license", filename="widevine.log")
+        logger.log_on_desktop_file("Trying to get widevine license", filename="widevine.log")
         resp = self.license_endpoint.post(widevine_url, data=widevineRequest)
-        self.log_myfile("Status code: "+str(resp.status_code), filename="widevine.log")
+        logger.log_on_desktop_file("Status code: "+str(resp.status_code), filename="widevine.log")
         if resp.status_code == 200:
-            self.log_myfile("We get it! WOW", filename="widevine.log")
+            logger.log_on_desktop_file("We get it! WOW", filename="widevine.log")
             return resp.content
         else:
             return self.get_widevine_response(widevineRequest,widevine_url, count+1)

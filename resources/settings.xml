@@ -8,5 +8,6 @@
     <setting id="logout" type="action" label="Logout" action="RunPlugin(plugin://plugin.video.timvision/?action=logout)" option="close"/>
     <!-- Hidden -->
     <setting id="timvision_service_port" value="8001" visible="false"/>
+    <setting id="abilita_log_desktop" type="bool" value="true">
   </category>
 </settings>
