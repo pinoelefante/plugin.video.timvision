@@ -10,6 +10,6 @@
     <setting id="timvision_service_port" value="8001" visible="false"/>
   </category>
   <category label="Debug">
-    <setting id="abilita_log_desktop" label="Log file su desktop" type="bool" value="true" default="false"/>
+    <setting id="abilita_log_desktop" label="Log file su desktop" type="bool" value="false" default="false"/>
   </category>
 </settings>

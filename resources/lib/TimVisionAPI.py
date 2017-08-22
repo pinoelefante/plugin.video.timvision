@@ -202,3 +202,20 @@ class TimVisionSession:
             return resp.content
         else:
             return self.get_widevine_response(widevineRequest,widevine_url, count+1)
+        
+    def getCast(self, contentId):
+        url = "/TRAY/CELEBRITIES?maxResults=50&deviceType={deviceType}&serviceName={serviceName}&contentId="+contentId
+        return self.get_contents(url)
+
+    def setFavorite(self, contentId, favorite = True):
+        f = "Y" if favorite else "N"
+        url = "/besc?action=SetFavorite&isFavorite="+f+"&contentId="+contentId+"&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}"
+        r = self.send_request(url, self.BASE_URL_AVS)
+        return r!=None and r["resultCode"]=="OK"
+
+    def getSeasonTrailer(self,contentId):
+        url = "/GETCDNFORSERIES?type=TRAILER&contentId=50663872&contentType=SEASON&channel={channel}&serviceName={serviceName}&providerName={providerName}&asJson=Y&deviceType={deviceType}"
+        r = self.send_request(url, self.BASE_URL_TIM)
+        if r != None:
+            return r["resultObj"]["src"]
+        return None

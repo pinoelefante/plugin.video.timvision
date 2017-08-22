@@ -1,6 +1,5 @@
-import xbmc
 import urllib
-import utils
+from resources.lib import utils
 
 class TimVisionHttpSubRessourceHandler:
     """ Represents the callable internal server routes & translates/executes them to requests for Netflix"""
@@ -71,3 +70,11 @@ class TimVisionHttpSubRessourceHandler:
     def get_license(self,params,rawdata): #rawdata is widevine payload
         url = urllib.unquote(params.get("license_url")[0])
         return self.timvision_session.get_widevine_response(rawdata,url)
+
+    def get_cast(self, params):
+        contentId = params.get("contentId")[0]
+        return self.timvision_session.getCast(contentId)
+
+    def get_season_trailer(self, params):
+        contentId = params.get("contentId")[0]
+        return self.timvision_session.getSeasonTrailer(contentId)

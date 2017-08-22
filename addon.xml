@@ -19,8 +19,11 @@
     <platform>all</platform>
     <license>GPL</license>
     <source>https://github.com/pinoelefante/plugin.video.timvision</source>
-    <news>v1.0.2 (2017-08-20)
-    - Logout button nelle impostazioni
+    <news>
+    v1.0.3 (2017-08-22)
+    - Abilitato menu per le informazioni
+    v1.0.2 (2017-08-20)
+    - Tasto "Logout" nelle impostazioni
     - Fix video sempre in HD anche se l'opzione era disabilitata
     v1.0.1 (2017-08-20)
     -Riproduzione in alta definizione
