@@ -116,7 +116,14 @@ class TimVisionSession:
 
     def load_serie_seasons(self, serieId):
         url = "/DETAILS?contentId="+str(serieId)+"&type=SERIES&renderEngine=DELTA&deviceType={deviceType}&serviceName={serviceName}"
-        return self.get_contents(url)
+        response = self.get_contents(url)
+        if response!=None:
+            seasons = []
+            for s in response:
+                if s["layout"]=="SEASON":
+                    seasons.append(s)
+            return seasons
+        return None
 
     def load_serie_episodes(self, seasonId):
         url = "/DETAILS?renderEngine=DELTA&contentId="+seasonId+"&type=SEASON&deviceType={deviceType}&serviceName={serviceName}"

@@ -6,7 +6,7 @@ import urllib2
 import xbmc
 import xbmcgui
 import xbmcplugin
-from resources.lib import utils as logger
+from resources.lib import utils
 from resources.lib import TimVisionAPI
 
 
@@ -63,12 +63,15 @@ class Navigation:
                 action = params.get("action")
                 if action == "apri_serie":
                     id_serie = params.get("id_serie")
-                    self.populate_serie_seasons(id_serie)
+                    nome_serie = urllib.unquote(params.get("serieNome",""))
+                    self.populate_serie_seasons(id_serie,nome_serie)
                 elif action == "apri_stagione":
                     id_stagione = params.get("id_stagione")
                     items = self.call_timvision_service(
                         {"method": "load_serie_episodes", "seasonId": id_stagione})
-                    self.add_items_to_folder(items)
+                    if self.add_items_to_folder(items):
+                        folderTitle = "Stagione "+params.get("seasonNo")
+                        xbmcplugin.setPluginCategory(self.plugin_handle, folderTitle)
                 elif action == "play_item":
                     contentId = params.get("contentId")
                     videoType = params.get("videoType")
@@ -225,11 +228,11 @@ class Navigation:
 
     def add_items_to_folder(self, items):
         if items == None:
-            return
+            return False
         if len(items) == 0:
             self.kodi_helper.show_message(
                 "Non sono presenti contenuti? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Elenco vuoto",xbmcgui.NOTIFICATION_INFO)
-            return
+            return False
         _is_episodes = False
         for container in items:
             if not self.is_content_item(container["layout"]):
@@ -241,31 +244,30 @@ class Navigation:
             
             li = self.create_list_item(container,contentId)
             if folder:
-                url = "action=apri_serie&id_serie=" + container["id"]
+                title_unquoted = container["metadata"]["title"]
+                if isinstance(title_unquoted,unicode):
+                    title_unquoted=title_unquoted.encode("utf-8")
+                title = urllib.quote(title_unquoted)
+                url = "action=apri_serie&id_serie="+ container["id"]+"&serieNome="+title
             else:
                 has_hd = self.video_has_hd(container)
-                url = "action=play_item&contentId=" + \
-                    str(contentId) + "&videoType=" + videoType+"&has_hd="+str(has_hd)
+                url = "action=play_item&contentId="+str(contentId)+"&videoType="+videoType+"&has_hd="+str(has_hd)
                 if not _is_episodes and videoType == "EPISODE":
                     _is_episodes = True
-            xbmcplugin.addDirectoryItem(
-                handle=self.plugin_handle, isFolder=folder, listitem=li, url=self.plugin_dir + "?" + url)
+            xbmcplugin.addDirectoryItem(handle=self.plugin_handle, isFolder=folder, listitem=li, url=self.plugin_dir + "?" + url)
+        
         if _is_episodes:
-            xbmcplugin.addSortMethod(
-                self.plugin_handle, xbmcplugin.SORT_METHOD_EPISODE)
+            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_EPISODE)
         else:
-            xbmcplugin.addSortMethod(
-                self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
-            xbmcplugin.addSortMethod(
-                self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
-            xbmcplugin.addSortMethod(
-                self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
-            xbmcplugin.addSortMethod(
-                self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
+            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_UNSORTED)
+            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
+            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
+            xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
         return True
 
-    def populate_serie_seasons(self, serieId):
+    def populate_serie_seasons(self, serieId,serieNome):
         items = self.call_timvision_service(
             {"method": "load_serie_seasons", "serieId": serieId})
         if items is None:
@@ -276,19 +278,25 @@ class Navigation:
             self.kodi_helper.show_message(
                 "Non sono presenti stagioni? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Possibile errore",xbmcgui.NOTIFICATION_INFO)
             return
+        xbmcplugin.setContent(self.plugin_handle, "tvshow")
+        
+        unique_season = utils.get_bool(utils.get_setting("unique_season"))
+        if count == 1 and unique_season:
+            id_stagione = items[0]["metadata"]["contentId"]
+            episodes = self.call_timvision_service({"method": "load_serie_episodes", "seasonId": id_stagione})
+            if self.add_items_to_folder(episodes):
+                folderTitle = "Stagione "+str(items[0]["metadata"]["season"])
+                xbmcplugin.setPluginCategory(self.plugin_handle, folderTitle)
+            return
 
+        xbmcplugin.setPluginCategory(self.plugin_handle, serieNome)
         for season in items:
-            if season["layout"] == "SEASON":
-                li = xbmcgui.ListItem(
-                    label="Stagione " + str(season["metadata"]["season"]))
-                li.setArt({
-                    "fanart": season["metadata"]["bgImageUrl"]
-                })
-                li = self.create_context_menu(season["metadata"]["contentId"], li, "tvshow_season")
-                url = "action=apri_stagione&id_stagione=" + \
-                    season["metadata"]["contentId"]
-                xbmcplugin.addDirectoryItem(
-                    handle=self.plugin_handle, url=self.plugin_dir + "?" + url, listitem=li, isFolder=True)
+            li = xbmcgui.ListItem(label="Stagione " + str(season["metadata"]["season"]))
+            li.setArt({ "fanart": season["metadata"]["bgImageUrl"] })
+            li = self.create_context_menu(season["metadata"]["contentId"], li, "tvshow_season")
+            url = "action=apri_stagione&seasonNo="+str(season["metadata"]["season"])+"&id_stagione=" + season["metadata"]["contentId"]
+            xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=self.plugin_dir+"?"+url, listitem=li, isFolder=True)
+        
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
     """
     def getCast(self, contentId):

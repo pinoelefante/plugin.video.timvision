@@ -3,13 +3,17 @@
   <category label="Account">
     <setting id="username" type="text" label="Username" default=""/>
     <setting id="password" type="text" option="hidden" label="Password" default=""/>
-	  <setting id="prefer_hd" type="bool" label="Preferisci HD" value="true" default="true"/>
     <!-- Actions -->
     <setting id="logout" type="action" label="Logout" action="RunPlugin(plugin://plugin.video.timvision/?action=logout)" option="close"/>
-    <!-- Hidden -->
-    <setting id="timvision_service_port" value="8001" visible="false"/>
+  </category>
+  <category label="Contenuti">
+    <setting id="unique_season" type="bool" label="Spiana le serie con un'unica stagione" value="true" default="true"/>
+    <setting id="prefer_hd" type="bool" label="Preferisci HD" value="true" default="true"/>
   </category>
   <category label="Debug">
     <setting id="abilita_log_desktop" label="Log file su desktop" type="bool" value="false" default="false"/>
+
+    <!-- Hidden -->
+    <setting id="timvision_service_port" value="8001" visible="false"/>
   </category>
 </settings>
