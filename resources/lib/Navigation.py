@@ -330,24 +330,29 @@ class Navigation:
             {"method": "get_license_video", "contentId": contentId, "videoType": videoType,"prefer_hd":preferHD,"has_hd":hasHd})
         if license_info == None:
             return
+        
+        #KODI 17/18 supports this (wrapping call to license server)
         my_license_address = self.get_timvision_service_url()+"?action=get_license&license_url="+urllib.quote(license_info["widevine_url"])
         self.play(license_info["mpd_file"],my_license_address)
         
-    def play(self, url, licenseKey=None):
+        #only KODI 18 supports this
+        #self.play(license_info["mpd_file"],license_info["widevine_url"],"AVS_COOKIE="+license_info["avs_cookie"])
+        
+        
+    def play(self, url, licenseKey=None,licenseHeaders=""):
         inputstream_addon = self.kodi_helper.get_inputstream_addon()
         if inputstream_addon == None:
             self.kodi_helper.log("inputstream_addon not found")
             return
-
+        userAgent = 'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0'
         play_item = xbmcgui.ListItem(path=url)
         play_item.setContentLookup(False)
         play_item.setMimeType('application/dash+xml')
-        play_item.setProperty(inputstream_addon + '.stream_headers',
-                              'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0')
+        play_item.setProperty(inputstream_addon + '.stream_headers',userAgent)
         play_item.setProperty(inputstream_addon + '.manifest_type', 'mpd')
         if licenseKey!=None:
             play_item.setProperty(inputstream_addon + '.license_type', 'com.widevine.alpha')
-            play_item.setProperty(inputstream_addon + '.license_key', licenseKey+'||R{SSM}|')
+            play_item.setProperty(inputstream_addon + '.license_key', licenseKey+'|'+userAgent+'&'+licenseHeaders+'|R{SSM}|')
         
         play_item.setProperty('inputstreamaddon', "inputstream.adaptive")
         xbmcplugin.setResolvedUrl(handle=self.plugin_handle, succeeded=True, listitem=play_item)

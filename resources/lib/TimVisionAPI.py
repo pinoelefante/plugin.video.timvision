@@ -69,9 +69,8 @@ class TimVisionSession:
             self.api_endpoint.headers.__setitem__(
                 self.user_http_header, r["resultObj"])
             self.sessionLoginHash = r["extObject"]["hash"]
-            avs_cookie = self.api_endpoint.cookies.get("avs_cookie")
-            self.license_endpoint.headers.__setitem__(
-                'AVS_COOKIE', avs_cookie)
+            self.avs_cookie = self.api_endpoint.cookies.get("avs_cookie")
+            self.license_endpoint.headers.__setitem__('AVS_COOKIE', self.avs_cookie)
             self.stop_check_session = threading.Event()
             check_thread = threading.Thread(target=self.check_session)
             check_thread.start()
@@ -151,10 +150,10 @@ class TimVisionSession:
                 mpdContent["mpd"]=mpdContent["mpd"].replace("_SD.mpd","_HD.mpd")
             return {
                 "mpd_file": mpdContent["mpd"],
+                "avs_cookie":self.avs_cookie,
                 "widevine_url": self.widevine_proxy_url.replace("{ContentIdAVS}", contentId).replace("{AssetIdWD}", assetIdWd).replace("{CpId}", mpdContent["cpId"]).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", self.service_channel).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
             }
-        return None
-
+        return 
     def get_assetIdWd(self, mpdUrl):
         partial = mpdUrl[mpdUrl.find("DASH") + 5:]
         partial = partial[0:partial.find("/")]
