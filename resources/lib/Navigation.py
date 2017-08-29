@@ -331,14 +331,8 @@ class Navigation:
         if license_info == None:
             return
         
-        #KODI 17/18 supports this (wrapping call to license server)
-        my_license_address = self.get_timvision_service_url()+"?action=get_license&license_url="+urllib.quote(license_info["widevine_url"])
-        self.play(license_info["mpd_file"],my_license_address)
-        
-        #only KODI 18 supports this
-        #self.play(license_info["mpd_file"],license_info["widevine_url"],"AVS_COOKIE="+license_info["avs_cookie"])
-        
-        
+        self.play(license_info["mpd_file"],license_info["widevine_url"],"AVS_COOKIE="+license_info["avs_cookie"])
+              
     def play(self, url, licenseKey=None,licenseHeaders=""):
         inputstream_addon = self.kodi_helper.get_inputstream_addon()
         if inputstream_addon == None:

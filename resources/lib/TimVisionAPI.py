@@ -196,18 +196,6 @@ class TimVisionSession:
         if data != None:
             return data["resultObj"]["containers"]
         return None
-
-    def get_widevine_response(self, widevineRequest, widevine_url, count=0):
-        if count == 3:
-            return None
-        logger.log_on_desktop_file("Trying to get widevine license", filename="widevine.log")
-        resp = self.license_endpoint.post(widevine_url, data=widevineRequest)
-        logger.log_on_desktop_file("Status code: "+str(resp.status_code), filename="widevine.log")
-        if resp.status_code == 200:
-            logger.log_on_desktop_file("We get it! WOW", filename="widevine.log")
-            return resp.content
-        else:
-            return self.get_widevine_response(widevineRequest,widevine_url, count+1)
         
     def getCast(self, contentId):
         url = "/TRAY/CELEBRITIES?maxResults=50&deviceType={deviceType}&serviceName={serviceName}&contentId="+contentId
