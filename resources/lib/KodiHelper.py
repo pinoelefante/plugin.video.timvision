@@ -92,7 +92,10 @@ class KodiHelper:
         dialog = xbmcgui.Dialog()
         dialog.notification(title, message, level, 3000)
         return True
-    
+    def show_dialog(self,message,title):
+        dialog = xbmcgui.Dialog()
+        dialog.ok(title,message)
+        return True
     def get_local_string(self, string_id):
         """Returns the localized version of a string
 

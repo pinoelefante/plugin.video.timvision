@@ -106,8 +106,7 @@ class Navigation:
     def create_main_page(self):
         categories = self.call_timvision_service({"method": "get_categories"})
         if categories == None:
-            self.kodi_helper.show_message(
-                "Controlla di avere la connessione attiva. Se l'errore persiste, contatta lo sviluppatore del plugin", "Errore",xbmcgui.NOTIFICATION_ERROR)
+            self.kodi_helper.show_dialog("Controlla di avere la connessione attiva. Se l'errore persiste, contatta lo sviluppatore del plugin", "Errore")
             return
         for cat in categories:
             label = cat["metadata"]["label"]
@@ -228,10 +227,11 @@ class Navigation:
 
     def add_items_to_folder(self, items):
         if items == None:
+            self.kodi_helper.show_dialog("Errore in add_items_to_folder: items is None", "Add items to folder")
+            self.kodi_helper.log("add_items_to_folder: items is None")
             return False
         if len(items) == 0:
-            self.kodi_helper.show_message(
-                "Non sono presenti contenuti? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Elenco vuoto",xbmcgui.NOTIFICATION_INFO)
+            self.kodi_helper.show_dialog("Non sono presenti contenuti? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Elenco vuoto")
             return False
         _is_episodes = False
         for container in items:
@@ -271,12 +271,12 @@ class Navigation:
         items = self.call_timvision_service(
             {"method": "load_serie_seasons", "serieId": serieId})
         if items is None:
-            self.kodi_helper.show_message("Si e' verificato un errore", "")
+            self.kodi_helper.show_dialog("Errore in populate_serie_seasons: items is None", "Caricamento stagioni")
+            self.kodi_helper.log("populate_serie_seasons: items is None. SerieId="+serieId+" serieNome="+serieNome)
             return
         count = len(items)
         if count == 0:
-            self.kodi_helper.show_message(
-                "Non sono presenti stagioni? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Possibile errore",xbmcgui.NOTIFICATION_INFO)
+            self.kodi_helper.show_dialog("Non sono presenti stagioni? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Possibile errore")
             return
         xbmcplugin.setContent(self.plugin_handle, "tvshow")
         
@@ -337,6 +337,7 @@ class Navigation:
         inputstream_addon = self.kodi_helper.get_inputstream_addon()
         if inputstream_addon == None:
             self.kodi_helper.log("inputstream_addon not found")
+            self.kodi_helper.show_dialog("L'addon inputstream.adaptive non e' installato o e' disabilitato", "Addon non trovato")
             return
         userAgent = 'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0'
         play_item = xbmcgui.ListItem(path=url)
