@@ -329,7 +329,11 @@ class Navigation:
         license_info = self.call_timvision_service(
             {"method": "get_license_video", "contentId": contentId, "videoType": videoType,"prefer_hd":preferHD,"has_hd":hasHd})
         
-        license_address = license_info["widevine_url"] if self.kodi_helper.get_setting("inputstream_kodi18")=="true" else self.get_timvision_service_url()+"?action=get_license&license_url="+urllib.quote(license_info["widevine_url"])
+        if utils.get_bool(utils.get_setting("inputstream_kodi17")):
+            license_address = self.get_timvision_service_url()+"?action=get_license&license_url="+urllib.quote(license_info["widevine_url"])
+        else:
+            license_address = license_info["widevine_url"]
+        
         if license_address == None:
             return False
 
@@ -341,7 +345,7 @@ class Navigation:
             self.kodi_helper.log("inputstream_addon not found")
             self.kodi_helper.show_dialog("L'addon inputstream.adaptive non e' installato o e' disabilitato", "Addon non trovato")
             return
-        
+
         userAgent = 'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0'
         play_item = xbmcgui.ListItem(path=url)
         play_item.setContentLookup(False)

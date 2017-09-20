@@ -38,8 +38,7 @@ class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         # no existing method given
         if method not in methods:
-            self.send_error(404, 'Method "' + str(method) +
-                            '" not found. Available methods: ' + str(methods))
+            self.send_error(404, 'Method ' + str(method) + ' not found. Available methods: ' + str(methods))
             return
         # call method & get the result
         result = getattr(sub_res_handler, method)(params)
@@ -61,8 +60,7 @@ class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         # no existing method given
         if method not in methods:
-            self.send_error(404, 'Method "' + str(method) +
-                            '" not found. Available methods: ' + str(methods))
+            self.send_error(404, 'Method ' + str(method) + ' not found. Available methods: ' + str(methods))
             return
         
         rawdata = self.rfile.read(int(self.headers.getheader('Content-Length')))

@@ -12,7 +12,7 @@
   </category>
   <category label="Debug">
     <setting id="abilita_log_desktop" label="Log file su desktop" type="bool" value="false" default="false"/>
-    <setting id="inputstream_kodi17" label="Modalità Kodi 17.4" type="bool" value="true" default="true">
+    <setting id="inputstream_kodi17" label="Modalità Kodi 17.4" type="bool" value="true" default="true"/>
     <!-- Hidden -->
     <setting id="timvision_service_port" value="8001" visible="false"/>
   </category>
