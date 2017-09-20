@@ -49,6 +49,32 @@ class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.wfile.write(json.dumps({'method': method, 'result': result}))
         return
 
+    def do_POST(self):
+        url = urlparse(self.path)
+        params = parse_qs(url.query)
+        method = params.get("action")[0]
+        
+        # not method given
+        if method == None:
+            self.send_error(500, 'No method declared')
+            return
+
+        # no existing method given
+        if method not in methods:
+            self.send_error(404, 'Method "' + str(method) +
+                            '" not found. Available methods: ' + str(methods))
+            return
+        
+        rawdata = self.rfile.read(int(self.headers.getheader('Content-Length')))
+        # call method & get the result
+        result = getattr(sub_res_handler, method)(params,rawdata)
+        
+        self.send_response(200 if result!=None else 500)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(result if result!=None else "")
+        return
+
     def log_message(self, format, *args):
         """Disable the BaseHTTPServer Log"""
         return

@@ -213,3 +213,12 @@ class TimVisionSession:
         if r != None:
             return r["resultObj"]["src"]
         return None
+    def get_widevine_response(self, widevineRequest, widevine_url):
+        for count in range(0,3):
+            logger.log_on_desktop_file("Trying to get widevine license", filename="widevine.log")
+            resp = self.license_endpoint.post(widevine_url, data=widevineRequest)
+            logger.log_on_desktop_file("Status code: "+str(resp.status_code), filename="widevine.log")
+            if resp.status_code == 200:
+                logger.log_on_desktop_file("We get it! WOW", filename="widevine.log")
+                return resp.content
+        return None
