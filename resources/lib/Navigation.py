@@ -229,9 +229,11 @@ class Navigation:
             return False
         _is_episodes = False
         for container in items:
-            folder = container["layout"] == "SERIES_ITEM" or container["layout"] == "COLLECTION_ITEM"
+            layout_item=container["layout"]
+            
+            folder = layout_item == "SERIES_ITEM" or layout_item == "COLLECTION_ITEM" or layout_item=="EDITORIAL_ITEM"
 
-            if container["layout"] == "COLLECTION_ITEM":
+            if layout_item == "COLLECTION_ITEM" or layout_item=="EDITORIAL_ITEM":
                 li = xbmcgui.ListItem(container["metadata"]["title"])
                 li.setArt({"poster": container["metadata"]["imageUrl"]})
                 li.setInfo("video", {
@@ -241,7 +243,7 @@ class Navigation:
                 url = self.plugin_dir + "?action=open_page&uri=" + urllib.quote_plus(container["actions"][0]["uri"])
                 xbmcplugin.addDirectoryItem(handle=self.plugin_handle, isFolder=folder, listitem=li, url=url)
                 pass
-            elif container["layout"] == "SERIES_ITEM":
+            elif layout_item == "SERIES_ITEM":
                 contentId = container["metadata"]["contentId"]
                 li = self.create_list_item(container,contentId)
                 title_unquoted = container["metadata"]["title"]
@@ -251,8 +253,8 @@ class Navigation:
                 url = "action=apri_serie&id_serie="+ container["id"]+"&serieNome="+title
                 xbmcplugin.addDirectoryItem(handle=self.plugin_handle, isFolder=folder, listitem=li, url=self.plugin_dir + "?" + url)
                 pass
-            elif container["layout"]=="MOVIE_ITEM" or container["layout"]=="EPISODE":
-                videoType = "MOVIE" if container["layout"] == "MOVIE_ITEM" else "EPISODE"
+            elif layout_item=="MOVIE_ITEM" or layout_item=="EPISODE":
+                videoType = "MOVIE" if layout_item == "MOVIE_ITEM" else "EPISODE"
                 contentId = container["id"] if videoType == "MOVIE" else container["metadata"]["contentId"]
                 li = self.create_list_item(container,contentId)
                 has_hd = self.video_has_hd(container)
