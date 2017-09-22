@@ -42,7 +42,7 @@ class TimVisionSession:
         if r.status_code == 200:
             version = r.text.rsplit('"')[1].rsplit('"')[0]
             self.app_version = version
-            self.BASE_URL_TIM = "https://www.timvision.it/TIM/{appVersion}/PROD_WEB/IT/{channel}/ITALY"
+            self.BASE_URL_TIM = "https://www.timvision.it/TIM/{appVersion}/PRODSVOD_WEB//IT/{channel}/ITALY"
             return True
         return False
 

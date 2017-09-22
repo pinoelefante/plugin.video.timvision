@@ -278,7 +278,7 @@ class Navigation:
         if count == 0:
             self.kodi_helper.show_dialog("Non sono presenti stagioni? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Possibile errore")
             return
-        xbmcplugin.setContent(self.plugin_handle, "tvshow")
+        #xbmcplugin.setContent(self.plugin_handle, "tvshow")
         
         unique_season = utils.get_bool(utils.get_setting("unique_season"))
         if count == 1 and unique_season:
