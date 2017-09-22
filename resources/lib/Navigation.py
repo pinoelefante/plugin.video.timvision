@@ -122,30 +122,24 @@ class Navigation:
     def create_category_page(self, pageId, ha_elenco=False, actionName=''):
         if ha_elenco:
             li = xbmcgui.ListItem(label='Elenco completo')
-            xbmcplugin.addDirectoryItem(
-                handle=self.plugin_handle, url=self.plugin_dir + "?page=" + actionName, listitem=li, isFolder=True)
+            xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=self.plugin_dir + "?page=" + actionName, listitem=li, isFolder=True)
 
-        pages = self.call_timvision_service(
-            {"method": "get_page", "page": str(pageId)})
+        pages = self.call_timvision_service({"method": "get_page", "page": str(pageId)})
         if pages != None:
             for page in pages:
                 if page["layout"] == "SMALL_CARDS":
                     if page["metadata"]["label"] == "TUTTI I TITOLI":
                         continue
-                    li = xbmcgui.ListItem(
-                        label=page["metadata"]["label"].lower().capitalize())
-                    url = self.plugin_dir + "?action=open_page&uri=" + \
-                        urllib.quote_plus(page["retrieveItems"]["uri"])
-                    xbmcplugin.addDirectoryItem(
-                        handle=self.plugin_handle, isFolder=True, listitem=li, url=url)
+                    li = xbmcgui.ListItem(label=page["metadata"]["label"].lower().capitalize())
+                    url = self.plugin_dir + "?action=open_page&uri=" + urllib.quote_plus(page["retrieveItems"]["uri"])
+                    xbmcplugin.addDirectoryItem(handle=self.plugin_handle, isFolder=True, listitem=li, url=url)
 
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
         return
 
     def open_category_page(self, action):
         action = urllib.unquote_plus(action)
-        items = self.call_timvision_service(
-            {"method": "get_contents", "url": action})
+        items = self.call_timvision_service({"method": "get_contents", "url": action})
         self.add_items_to_folder(items)
 
     def video_get_mediatype(self, media):
@@ -217,7 +211,7 @@ class Navigation:
         """
         return li
     def is_content_item(self, l):
-        return l == "SERIES_ITEM" or l == "MOVIE_ITEM" or l == "EPISODE"
+        return l == "SERIES_ITEM" or l == "MOVIE_ITEM" or l == "EPISODE" or l == "COLLECTION_ITEM"
     
     def video_has_hd(self, video):
         for videoType in video["metadata"]["videoType"]:
@@ -235,26 +229,38 @@ class Navigation:
             return False
         _is_episodes = False
         for container in items:
-            if not self.is_content_item(container["layout"]):
-                continue
+            folder = container["layout"] == "SERIES_ITEM" or container["layout"] == "COLLECTION_ITEM"
 
-            folder = container["layout"] == "SERIES_ITEM"
-            videoType = "MOVIE" if container["layout"] == "MOVIE_ITEM" else "EPISODE"
-            contentId = container["id"] if videoType == "MOVIE" else container["metadata"]["contentId"]
-            
-            li = self.create_list_item(container,contentId)
-            if folder:
+            if container["layout"] == "COLLECTION_ITEM":
+                li = xbmcgui.ListItem(container["metadata"]["title"])
+                li.setArt({"poster": container["metadata"]["imageUrl"]})
+                li.setInfo("video", {
+                    "plot": container["metadata"]["longDescription"],
+                    "plotoutline": container["metadata"]["shortDescription"]
+                })
+                url = self.plugin_dir + "?action=open_page&uri=" + urllib.quote_plus(container["actions"][0]["uri"])
+                xbmcplugin.addDirectoryItem(handle=self.plugin_handle, isFolder=folder, listitem=li, url=url)
+                pass
+            elif container["layout"] == "SERIES_ITEM":
+                contentId = container["metadata"]["contentId"]
+                li = self.create_list_item(container,contentId)
                 title_unquoted = container["metadata"]["title"]
                 if isinstance(title_unquoted,unicode):
                     title_unquoted=title_unquoted.encode("utf-8")
                 title = urllib.quote(title_unquoted)
                 url = "action=apri_serie&id_serie="+ container["id"]+"&serieNome="+title
-            else:
+                xbmcplugin.addDirectoryItem(handle=self.plugin_handle, isFolder=folder, listitem=li, url=self.plugin_dir + "?" + url)
+                pass
+            elif container["layout"]=="MOVIE_ITEM" or container["layout"]=="EPISODE":
+                videoType = "MOVIE" if container["layout"] == "MOVIE_ITEM" else "EPISODE"
+                contentId = container["id"] if videoType == "MOVIE" else container["metadata"]["contentId"]
+                li = self.create_list_item(container,contentId)
                 has_hd = self.video_has_hd(container)
                 url = "action=play_item&contentId="+str(contentId)+"&videoType="+videoType+"&has_hd="+str(has_hd)
                 if not _is_episodes and videoType == "EPISODE":
                     _is_episodes = True
-            xbmcplugin.addDirectoryItem(handle=self.plugin_handle, isFolder=folder, listitem=li, url=self.plugin_dir + "?" + url)
+                xbmcplugin.addDirectoryItem(handle=self.plugin_handle, isFolder=folder, listitem=li, url=self.plugin_dir + "?" + url)
+                pass
         
         if _is_episodes:
             xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_EPISODE)
