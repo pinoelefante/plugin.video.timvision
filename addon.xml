@@ -20,6 +20,8 @@
     <license>GPL</license>
     <source>https://github.com/pinoelefante/plugin.video.timvision</source>
     <news>
+    v1.0.6 (2017-09-22)
+    - Caricamento di "Generi" in Cinema e "Collezioni" in Serie TV
     v1.0.5 (2017-09-22)
     - Non venivano caricate le stagioni delle serie tv su Kodi 17.4
     v1.0.4 (2017-08-24)
