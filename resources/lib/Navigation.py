@@ -86,6 +86,8 @@ class Navigation:
                 elif action == "play_season_trailer":
                     contentId = params.get("contentId")
                     self.play_season_trailer(contentId)
+                elif action == "search":
+                    self.go_search()
 
     def verifica_login(self, count=0):
         logged = self.call_timvision_service({"method":"is_logged"})
@@ -117,6 +119,11 @@ class Navigation:
             pageId = uri[6:uri.find("?")]
             xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=self.plugin_dir +
                                         "?page=" + label + "&category_id=" + pageId, isFolder=True, listitem=li)
+        
+        #search item
+        li = xbmcgui.ListItem(label="Cerca...")
+        xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=self.plugin_dir+"?action=search", isFolder=True,listitem=li)
+
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
 
     def create_category_page(self, pageId, ha_elenco=False, actionName=''):
@@ -127,7 +134,8 @@ class Navigation:
         pages = self.call_timvision_service({"method": "get_page", "page": str(pageId)})
         if pages != None:
             for page in pages:
-                if page["layout"] == "SMALL_CARDS":
+                layout = page["layout"]
+                if layout == "SMALL_CARDS" or layout == "KIDS_COLLECTIONS":
                     if page["metadata"]["label"] == "TUTTI I TITOLI":
                         continue
                     li = xbmcgui.ListItem(label=page["metadata"]["label"].lower().capitalize())
@@ -218,6 +226,8 @@ class Navigation:
             if videoType == "HD":
                 return True
         return False
+    def is_folder(self, layout_item):
+        return layout_item == "SERIES_ITEM" or layout_item == "COLLECTION_ITEM" or layout_item=="EDITORIAL_ITEM" or layout_item=="KIDS_ITEM"
 
     def add_items_to_folder(self, items):
         if items == None:
@@ -230,14 +240,14 @@ class Navigation:
         _is_episodes = False
         for container in items:
             layout_item=container["layout"]
-            
-            folder = layout_item == "SERIES_ITEM" or layout_item == "COLLECTION_ITEM" or layout_item=="EDITORIAL_ITEM"
 
-            if layout_item == "COLLECTION_ITEM" or layout_item=="EDITORIAL_ITEM":
+            folder = self.is_folder(layout_item)
+
+            if layout_item == "COLLECTION_ITEM" or layout_item=="EDITORIAL_ITEM" or layout_item=="KIDS_ITEM":
                 li = xbmcgui.ListItem(container["metadata"]["title"])
                 li.setArt({"poster": container["metadata"]["imageUrl"]})
                 li.setInfo("video", {
-                    "plot": container["metadata"]["longDescription"],
+                    "plot": container["metadata"]["longDescription"].replace("Personaggi Second Screen ",""),
                     "plotoutline": container["metadata"]["shortDescription"]
                 })
                 url = self.plugin_dir + "?action=open_page&uri=" + urllib.quote_plus(container["actions"][0]["uri"])
@@ -324,6 +334,14 @@ class Navigation:
                     actors.extend(item)
         return directors,actors
     """
+
+    def go_search(self):
+        keyword = self.kodi_helper.show_text_field("Keyword")
+        if keyword == None or len(keyword) == 0:
+            return False
+        items = self.call_timvision_service({"method":"search", "keyword":keyword})
+        return self.add_items_to_folder(items)
+
     def play_season_trailer(self, contentId):
         #xbmc.executebuiltin("PlayMedia(%s,1)" % (trailer))
         url = self.call_timvision_service({"method":"get_season_trailer", "contentId":contentId})

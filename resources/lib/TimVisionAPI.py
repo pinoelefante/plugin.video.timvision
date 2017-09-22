@@ -6,6 +6,10 @@ import os
 from resources.lib import utils as logger
 from requests import session, cookies
 
+AREA_FREE = "SVOD"
+AREA_PAY = "TVOD"
+AREA_FREE_PAY = "ALL"
+
 
 class TimVisionSession:
     BASE_URL_TIM = ""
@@ -213,6 +217,14 @@ class TimVisionSession:
         if r != None:
             return r["resultObj"]["src"]
         return None
+    
+    def search(self, keyword, area = AREA_FREE):
+        url = "/TRAY/SEARCHRECOM?keyword="+keyword+"&from=0&to=100&area="+area+"&category=ALL&deviceType={deviceType}&serviceName={serviceName}"
+        r = self.send_request(url, self.BASE_URL_TIM)
+        if r!=None:
+            return r["resultObj"]["containers"][0]["items"] if r["resultObj"]["total"] > 0 else {}
+        return None
+
     def get_widevine_response(self, widevineRequest, widevine_url):
         for count in range(0,3):
             logger.log_on_desktop_file("Trying to get widevine license", filename="widevine.log")
