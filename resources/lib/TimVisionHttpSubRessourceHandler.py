@@ -82,3 +82,7 @@ class TimVisionHttpSubRessourceHandler:
     def search(self, params):
         keyword = params.get("keyword",[""])[0]
         return self.timvision_session.search(keyword)
+
+    def set_player(self, params):
+        url = params.get("url",[""])[0]
+        return self.timvision_session.set_playing_media(url)

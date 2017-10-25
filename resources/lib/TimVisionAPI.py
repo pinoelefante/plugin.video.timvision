@@ -5,6 +5,7 @@ import urllib
 import os
 from resources.lib import utils as logger
 from requests import session, cookies
+from resources.lib.MyPlayer import MyPlayer
 
 AREA_FREE = "SVOD"
 AREA_PAY = "TVOD"
@@ -24,8 +25,10 @@ class TimVisionSession:
     user_http_header = "X-Avs-Username"
     sessionLoginHash = None
     widevine_proxy_url = "https://license.cubovision.it/WidevineManager/WidevineManager.svc/GetLicense/{ContentIdAVS}/{AssetIdWD}/{CpId}/{Type}/{ClientTime}/{Channel}/{DeviceType}"
+    player = MyPlayer()
 
     def __init__(self):
+        player = MyPlayer()
         self.api_endpoint.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0',
             'Accept-Encoding': 'gzip, deflate',
@@ -234,3 +237,32 @@ class TimVisionSession:
                 logger.log_on_desktop_file("We get it! WOW", filename="widevine.log")
                 return resp.content
         return None
+
+    def set_playing_media(self, url):
+        self.player.setItem(url)
+
+    def keep_alive(self, contentId):
+        url = "/besc?action=KeepAlive&channel={channel}&type={deviceType}&noRefresh=Y&providerName={providerName}&serviceName={serviceName}&contentId="+str(contentId)
+        r = self.send_request(url, self.BASE_URL_AVS)
+        if r!=None:
+            return True
+        return False
+
+    def set_seen(self, contentId):
+        return self.stop_content(contentId, -1)
+
+    def pause_consumption(self, contentId, time):
+        url = "/besc?action=PauseConsumption&channel={channel}&providerName={providerName}&serviceName={serviceName}&bookmark="+str(time)+"&deltaThreshold="+str(time)
+        r = self.send_request(url, self.BASE_URL_AVS)
+        if r != None:
+            #TODO: salvare time
+            return True
+        return False
+
+    def stop_content(self, contentId, time):
+        url = "/besc?action=StopContent&channel={channel}&providerName={providerName}&serviceName={serviceName}&type=VOD&contentId="+str(contentId)+"&bookmark="+str(time)+"&deltaThreshold="+("223" if time<0 else str(time))+"&section=CATALOGUE" #&deviceId=
+        r = self.send_request(url, self.BASE_URL_AVS)
+        if r!=None:
+            #TODO salvare time
+            return True
+        return False

@@ -383,7 +383,9 @@ class Navigation:
             play_item.setProperty(inputstream_addon + '.license_key', licenseKey+'|'+userAgent+'&'+licenseHeaders+'|R{SSM}|')
         
         play_item.setProperty('inputstreamaddon', "inputstream.adaptive")
+        self.call_timvision_service({"method":"set_player","url":url})
         xbmcplugin.setResolvedUrl(handle=self.plugin_handle, succeeded=True, listitem=play_item)
+
     def get_timvision_service_url(self):
         return 'http://127.0.0.1:' + str(self.kodi_helper.get_addon().getSetting('timvision_service_port'))
 
@@ -391,7 +393,7 @@ class Navigation:
         url_values = urllib.urlencode(params)
         url = self.get_timvision_service_url()
         full_url = url + '?' + url_values
-        self.kodi_helper.log(full_url, xbmc.LOGNOTICE)
+        #self.kodi_helper.log(full_url, xbmc.LOGNOTICE)
         data = urllib2.urlopen(full_url).read()
         parsed_json = json.loads(data)
         result = parsed_json.get('result', None)
