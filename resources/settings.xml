@@ -3,6 +3,7 @@
   <category label="Account">
     <setting id="username" type="text" label="Username" default=""/>
     <setting id="password" type="text" option="hidden" label="Password" default=""/>
+    <setting type="sep"/>
     <!-- Actions -->
     <setting id="logout" type="action" label="Logout" action="RunPlugin(plugin://plugin.video.timvision/?action=logout)" option="close"/>
   </category>
@@ -11,8 +12,14 @@
     <setting id="prefer_hd" type="bool" label="Preferisci HD" value="true" default="true"/>
   </category>
   <category label="Debug">
+    <setting id="inputstream_kodi17" label="Modalità 17.4 <= Kodi < 18" type="bool" value="true" default="true"/>
+    <setting type="sep"/>
+    <setting id="log_all_apicalls" label="Log api calls" type="bool" value="false" default="false"/>
+    <setting type="sep"/>
     <setting id="abilita_log_desktop" label="Log file su desktop" type="bool" value="false" default="false"/>
-    <setting id="inputstream_kodi17" label="Modalità Kodi 17.4" type="bool" value="true" default="true"/>
+    <setting id="logd_timvision" label="TimVision log" type="bool" value="true" default="true" enable="eq(-1 ,true)"/>
+    <setting id="logd_player" label="Player log" type="bool" value="true" default="true" enable="eq(-2 ,true)"/>
+    <setting id="logd_widevine" label="Widevine log" type="bool" value="true" default="true" enable="eq(-3 ,true)"/>
     <!-- Hidden -->
     <setting id="timvision_service_port" value="8001" visible="false"/>
   </category>

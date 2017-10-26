@@ -1,12 +1,8 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Module: KodiHelper
-# Created on: 13.01.2017
-
 import xbmcgui
 import xbmc
 import json
 import os
+from resources.lib import utils
 from xbmcaddon import Addon
 
 
@@ -40,24 +36,14 @@ class KodiHelper:
         """Returns a fresh addon instance"""
         return Addon()
 
-    def get_setting(self, key):
-        return self.get_addon().getSetting(key)
-
-    def set_setting(self, key, value):
-        """Public interface for the addons setSetting method
-
-        Returns
-        -------
-        bool
-            Setting could be set or not
-        """
-        return self.get_addon().setSetting(key, value)
     def show_text_field(self, label=""):
         dlg = xbmcgui.Dialog()
         return dlg.input(label, type=xbmcgui.INPUT_ALPHANUM)
+
     def show_password_field(self):
         dlg = xbmcgui.Dialog()
         return dlg.input("Password", type=xbmcgui.INPUT_ALPHANUM, option=xbmcgui.ALPHANUM_HIDE_INPUT)
+
     def get_credentials(self):
         """Returns the users stored credentials
 
@@ -67,79 +53,52 @@ class KodiHelper:
             The users stored account data
         """
         return {
-            'username': self.get_addon().getSetting('username'),
-            'password': self.get_addon().getSetting('password')
+            'username': utils.get_setting('username'),
+            'password': utils.get_setting('password')
         }
+
     def set_credentials(self,username,password):
-        self.set_setting("username", username)
-        self.set_setting("password", password)
-    def log(self, msg, level=xbmc.LOGNOTICE):
-        """Adds a log entry to the Kodi log
-
-        Parameters
-        ----------
-        msg : :obj:`str`
-            Entry that should be turned into a list item
-
-        level : :obj:`int`
-            Kodi log level
-        """
-        if isinstance(msg, unicode):
-            msg = msg.encode('utf-8')
-        xbmc.log('[%s] %s' % (self.plugin, msg.__str__()), level)
+        utils.set_setting("username", username)
+        utils.set_setting("password", password)
 
     def show_message(self, message, title, level=xbmcgui.NOTIFICATION_ERROR):
         dialog = xbmcgui.Dialog()
         dialog.notification(title, message, level, 3000)
         return True
+
     def show_dialog(self,message,title):
         dialog = xbmcgui.Dialog()
         dialog.ok(title,message)
         return True
-    def get_local_string(self, string_id):
-        """Returns the localized version of a string
-
-        Parameters
-        ----------
-        string_id : :obj:`int`
-            ID of the string that shoudl be fetched
-
-        Returns
-        -------
-        :obj:`str`
-            Requested string or empty string
-        """
-        src = xbmc if string_id < 30000 else self.get_addon()
-        locString = src.getLocalizedString(string_id)
-        if isinstance(locString, unicode):
-            locString = locString.encode('utf-8')
-        return locString
-
+    
     def get_inputstream_addon(self):
         """Checks if the inputstream addon is installed & enabled.
-           Returns the type of the inputstream addon used or None if not found
-
+           Returns the type of the inputstream addon used and if it's enabled,
+           or None if not found.
         Returns
         -------
-        :obj:`str` or None
-            Inputstream addon or None
+        :obj:`tuple` of obj:`str` and bool, or None
+            Inputstream addon and if it's enabled, or None
         """
-        addon_type = 'inputstream.adaptive'
+        addon_id = 'inputstream.adaptive'
+        is_enabled = False
         payload = {
             'jsonrpc': '2.0',
             'id': 1,
             'method': 'Addons.GetAddonDetails',
             'params': {
-                'addonid': addon_type,
+                'addonid': addon_id,
                 'properties': ['enabled']
             }
         }
         response = xbmc.executeJSONRPC(json.dumps(payload))
         data = json.loads(response)
-        if not 'error' in data.keys():
-            if data['result']['addon']['enabled'] == True:
-                return addon_type
-        return None
+        if 'error' not in data.keys():
+            if isinstance(data.get('result'), dict):
+                if isinstance(data.get('result').get('addon'), dict):
+                    is_enabled = data.get('result').get('addon').get('enabled')
+            return (addon_id, is_enabled)
+        return (None, is_enabled)
     
     def open_settings(self):
         self.get_addon().openSettings()

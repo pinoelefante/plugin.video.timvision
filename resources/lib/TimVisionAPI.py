@@ -160,7 +160,7 @@ class TimVisionSession:
                 "avs_cookie":self.avs_cookie,
                 "widevine_url": self.widevine_proxy_url.replace("{ContentIdAVS}", contentId).replace("{AssetIdWD}", assetIdWd).replace("{CpId}", mpdContent["cpId"]).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", self.service_channel).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
             }
-        return 
+        return
     def get_assetIdWd(self, mpdUrl):
         partial = mpdUrl[mpdUrl.find("DASH") + 5:]
         partial = partial[0:partial.find("/")]
@@ -230,16 +230,16 @@ class TimVisionSession:
 
     def get_widevine_response(self, widevineRequest, widevine_url):
         for count in range(0,3):
-            logger.log_on_desktop_file("Trying to get widevine license", filename="widevine.log")
+            logger.log_on_desktop_file("Trying to get widevine license", filename=logger.LOG_WIDEVINE_FILE)
             resp = self.license_endpoint.post(widevine_url, data=widevineRequest)
-            logger.log_on_desktop_file("Status code: "+str(resp.status_code), filename="widevine.log")
+            logger.log_on_desktop_file("Status code: "+str(resp.status_code), filename=logger.LOG_WIDEVINE_FILE)
             if resp.status_code == 200:
-                logger.log_on_desktop_file("We get it! WOW", filename="widevine.log")
+                logger.log_on_desktop_file("We get it! WOW", filename=logger.LOG_WIDEVINE_FILE)
                 return resp.content
         return None
 
-    def set_playing_media(self, url):
-        self.player.setItem(url)
+    def set_playing_media(self, url, contentId):
+        self.player.setItem(url, contentId)
 
     def keep_alive(self, contentId):
         url = "/besc?action=KeepAlive&channel={channel}&type={deviceType}&noRefresh=Y&providerName={providerName}&serviceName={serviceName}&contentId="+str(contentId)
@@ -260,7 +260,10 @@ class TimVisionSession:
         return False
 
     def stop_content(self, contentId, time):
-        url = "/besc?action=StopContent&channel={channel}&providerName={providerName}&serviceName={serviceName}&type=VOD&contentId="+str(contentId)+"&bookmark="+str(time)+"&deltaThreshold="+("223" if time<0 else str(time))+"&section=CATALOGUE" #&deviceId=
+        url = "/besc?action=StopContent&channel={channel}&providerName={providerName}&serviceName={serviceName}&type=VOD&contentId="+str(contentId)+"&bookmark="+str(time)+"&deltaThreshold="+("100" if time<0 else str(time))+"&section=CATALOGUE" #&deviceId=
+        if contentId==None or contentId=="None":
+            logger.log_on_desktop_file("STOP CONTENT - ContentId = None")
+            return False
         r = self.send_request(url, self.BASE_URL_AVS)
         if r!=None:
             #TODO salvare time

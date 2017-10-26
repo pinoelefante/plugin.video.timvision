@@ -83,6 +83,25 @@ class TimVisionHttpSubRessourceHandler:
         keyword = params.get("keyword",[""])[0]
         return self.timvision_session.search(keyword)
 
-    def set_player(self, params):
+    def set_playing_item(self, params):
         url = params.get("url",[""])[0]
-        return self.timvision_session.set_playing_media(url)
+        contentId = params.get("contentId",[""])[0]
+        return self.timvision_session.set_playing_media(url, contentId)
+
+    def stop_content(self, params):
+        contentId = params.get("contentId")[0]
+        time = params.get("time", ["0"])[0]
+        return self.timvision_session.stop_content(contentId, time)
+
+    def pause_content(self, params):
+        contentId = params.get("contentId")[0]
+        time = params.get("time", ["0"])[0]
+        return self.timvision_session.pause_consumption(contentId, time)
+
+    def set_content_seen(self, params):
+        contentId = params.get("contentId")[0]
+        return self.timvision_session.set_seen(contentId)
+
+    def keep_alive(self, params):
+        contentId = params.get("contentId")[0]
+        return self.timvision_session.keep_alive(contentId)

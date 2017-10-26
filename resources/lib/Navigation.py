@@ -36,7 +36,7 @@ class Navigation:
                     self.create_category_page(
                         pageId=category_id, ha_elenco=True, actionName='CINEMA_ELENCO')
                 elif page == "CINEMA_ELENCO":
-                    items = self.call_timvision_service(
+                    items = utils.call_timvision_service(
                         {"method": "load_movies", "begin": "0", "load_all": "true"})
                     self.add_items_to_folder(items)
                 elif page == "SERIE TV":
@@ -44,7 +44,7 @@ class Navigation:
                     self.create_category_page(
                         pageId=category_id, ha_elenco=True, actionName='SERIE_ELENCO')
                 elif page == "SERIE_ELENCO":
-                    items = self.call_timvision_service(
+                    items = utils.call_timvision_service(
                         {"method": "load_series", "begin": "0", "load_all": "true"})
                     self.add_items_to_folder(items)
                 elif page == "INTRATTENIMENTO":
@@ -55,7 +55,7 @@ class Navigation:
                     self.create_category_page(
                         pageId=category_id, ha_elenco=True, actionName='BAMBINI_ELENCO')
                 elif page == "BAMBINI_ELENCO":
-                    items = self.call_timvision_service(
+                    items = utils.call_timvision_service(
                         {"method": "load_kids", "begin": "0", "load_all": "true"})
                     self.add_items_to_folder(items)
 
@@ -67,7 +67,7 @@ class Navigation:
                     self.populate_serie_seasons(id_serie,nome_serie)
                 elif action == "apri_stagione":
                     id_stagione = params.get("id_stagione")
-                    items = self.call_timvision_service(
+                    items = utils.call_timvision_service(
                         {"method": "load_serie_episodes", "seasonId": id_stagione})
                     if self.add_items_to_folder(items):
                         folderTitle = "Stagione "+params.get("seasonNo")
@@ -76,13 +76,13 @@ class Navigation:
                     contentId = params.get("contentId")
                     videoType = params.get("videoType")
                     has_hd = params.get("has_hd", "false")
-                    prefer_hd = self.kodi_helper.get_setting("prefer_hd")
+                    prefer_hd = utils.get_setting("prefer_hd")
                     self.play_video(contentId, videoType, has_hd, prefer_hd)
                 elif action == "open_page":
                     uri = params.get("uri")
                     self.open_category_page(uri)
                 elif action == "logout":
-                    self.call_timvision_service({"method":"logout"})
+                    utils.call_timvision_service({"method":"logout"})
                 elif action == "play_season_trailer":
                     contentId = params.get("contentId")
                     self.play_season_trailer(contentId)
@@ -90,11 +90,11 @@ class Navigation:
                     self.go_search()
 
     def verifica_login(self, count=0):
-        logged = self.call_timvision_service({"method":"is_logged"})
+        logged = utils.call_timvision_service({"method":"is_logged"})
         if not logged:
             credentials = self.kodi_helper.get_credentials()
             if credentials["username"] != "" and credentials["password"] != "":
-                logged = self.call_timvision_service({"method":"login", "username":credentials["username"], "password":credentials["password"]})
+                logged = utils.call_timvision_service({"method":"login", "username":credentials["username"], "password":credentials["password"]})
             if not logged:
                 if count == 0:
                     username = self.kodi_helper.show_text_field("Email")
@@ -106,7 +106,7 @@ class Navigation:
         return dict(urlparse.parse_qsl(parameters[1:]))
 
     def create_main_page(self):
-        categories = self.call_timvision_service({"method": "get_categories"})
+        categories = utils.call_timvision_service({"method": "get_categories"})
         if categories == None:
             self.kodi_helper.show_dialog("Controlla di avere la connessione attiva. Se l'errore persiste, contatta lo sviluppatore del plugin", "Errore")
             return
@@ -131,7 +131,7 @@ class Navigation:
             li = xbmcgui.ListItem(label='Elenco completo')
             xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=self.plugin_dir + "?page=" + actionName, listitem=li, isFolder=True)
 
-        pages = self.call_timvision_service({"method": "get_page", "page": str(pageId)})
+        pages = utils.call_timvision_service({"method": "get_page", "page": str(pageId)})
         if pages != None:
             for page in pages:
                 layout = page["layout"]
@@ -147,7 +147,7 @@ class Navigation:
 
     def open_category_page(self, action):
         action = urllib.unquote_plus(action)
-        items = self.call_timvision_service({"method": "get_contents", "url": action})
+        items = utils.call_timvision_service({"method": "get_contents", "url": action})
         self.add_items_to_folder(items)
 
     def video_get_mediatype(self, media):
@@ -232,7 +232,7 @@ class Navigation:
     def add_items_to_folder(self, items):
         if items == None:
             self.kodi_helper.show_dialog("Errore in add_items_to_folder: items is None", "Add items to folder")
-            self.kodi_helper.log("add_items_to_folder: items is None")
+            utils.kodi_log("add_items_to_folder: items is None")
             return False
         if len(items) == 0:
             self.kodi_helper.show_dialog("Non sono presenti contenuti? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Elenco vuoto")
@@ -286,11 +286,11 @@ class Navigation:
         return True
 
     def populate_serie_seasons(self, serieId,serieNome):
-        items = self.call_timvision_service(
+        items = utils.call_timvision_service(
             {"method": "load_serie_seasons", "serieId": serieId})
         if items is None:
             self.kodi_helper.show_dialog("Errore in populate_serie_seasons: items is None", "Caricamento stagioni")
-            self.kodi_helper.log("populate_serie_seasons: items is None. SerieId="+serieId+" serieNome="+serieNome)
+            utils.kodi_log("populate_serie_seasons: items is None. SerieId="+serieId+" serieNome="+serieNome)
             return
         count = len(items)
         if count == 0:
@@ -298,10 +298,10 @@ class Navigation:
             return
         #xbmcplugin.setContent(self.plugin_handle, "tvshow")
         
-        unique_season = utils.get_bool(utils.get_setting("unique_season"))
+        unique_season = utils.get_setting("unique_season")
         if count == 1 and unique_season:
             id_stagione = items[0]["metadata"]["contentId"]
-            episodes = self.call_timvision_service({"method": "load_serie_episodes", "seasonId": id_stagione})
+            episodes = utils.call_timvision_service({"method": "load_serie_episodes", "seasonId": id_stagione})
             if self.add_items_to_folder(episodes):
                 folderTitle = "Stagione "+str(items[0]["metadata"]["season"])
                 xbmcplugin.setPluginCategory(self.plugin_handle, folderTitle)
@@ -318,7 +318,7 @@ class Navigation:
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
     """
     def getCast(self, contentId):
-        cast = self.call_timvision_service({"method":"get_cast", "contentId":contentId})
+        cast = utils.call_timvision_service({"method":"get_cast", "contentId":contentId})
         if cast==None:
             return
         directors = []
@@ -339,12 +339,12 @@ class Navigation:
         keyword = self.kodi_helper.show_text_field("Keyword")
         if keyword == None or len(keyword) == 0:
             return False
-        items = self.call_timvision_service({"method":"search", "keyword":keyword})
+        items = utils.call_timvision_service({"method":"search", "keyword":keyword})
         return self.add_items_to_folder(items)
 
     def play_season_trailer(self, contentId):
         #xbmc.executebuiltin("PlayMedia(%s,1)" % (trailer))
-        url = self.call_timvision_service({"method":"get_season_trailer", "contentId":contentId})
+        url = utils.call_timvision_service({"method":"get_season_trailer", "contentId":contentId})
         if url != None:
             
             xbmc.executebuiltin("XBMC.RunPlugin(plugin://inputstream.adaptive?manifest_type=mpd&)" % (url))
@@ -352,10 +352,10 @@ class Navigation:
             self.play(url)
 
     def play_video(self, contentId, videoType,hasHd="false",preferHD="false"):
-        license_info = self.call_timvision_service(
+        license_info = utils.call_timvision_service(
             {"method": "get_license_video", "contentId": contentId, "videoType": videoType,"prefer_hd":preferHD,"has_hd":hasHd})
         
-        if utils.get_bool(utils.get_setting("inputstream_kodi17")):
+        if utils.get_setting("inputstream_kodi17"):
             license_address = self.get_timvision_service_url()+"?action=get_license&license_url="+urllib.quote(license_info["widevine_url"])
         else:
             license_address = license_info["widevine_url"]
@@ -363,16 +363,21 @@ class Navigation:
         if license_address == None:
             return False
 
-        self.play(license_info["mpd_file"],license_address,"AVS_COOKIE="+license_info["avs_cookie"])
+        self.play(contentId, license_info["mpd_file"],license_address,"AVS_COOKIE="+license_info["avs_cookie"])
               
-    def play(self, url, licenseKey=None,licenseHeaders=""):
-        inputstream_addon = self.kodi_helper.get_inputstream_addon()
+    def play(self, contentId, url, licenseKey=None,licenseHeaders=""):
+        inputstream_addon, is_enabled = self.kodi_helper.get_inputstream_addon()
+
         if inputstream_addon == None:
-            self.kodi_helper.log("inputstream_addon not found")
+            utils.kodi_log("inputstream.adaptive not found")
             self.kodi_helper.show_dialog("L'addon inputstream.adaptive non e' installato o e' disabilitato", "Addon non trovato")
             return
+        if not is_enabled:
+            utils.kodi_log("inputstream.adaptive addon not enabled")
+            self.kodi_helper.show_dialog("L'addon inputstream.adaptive deve essere abilitato per poter visualizzare i contenuti", "Addon disabilitato")
+            return
 
-        userAgent = 'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0'
+        userAgent = utils.get_user_agent()
         play_item = xbmcgui.ListItem(path=url)
         play_item.setContentLookup(False)
         play_item.setMimeType('application/dash+xml')
@@ -383,18 +388,5 @@ class Navigation:
             play_item.setProperty(inputstream_addon + '.license_key', licenseKey+'|'+userAgent+'&'+licenseHeaders+'|R{SSM}|')
         
         play_item.setProperty('inputstreamaddon', "inputstream.adaptive")
-        self.call_timvision_service({"method":"set_player","url":url})
+        utils.call_timvision_service({"method":"set_playing_item", "url":url, "contentId":contentId})
         xbmcplugin.setResolvedUrl(handle=self.plugin_handle, succeeded=True, listitem=play_item)
-
-    def get_timvision_service_url(self):
-        return 'http://127.0.0.1:' + str(self.kodi_helper.get_addon().getSetting('timvision_service_port'))
-
-    def call_timvision_service(self, params):
-        url_values = urllib.urlencode(params)
-        url = self.get_timvision_service_url()
-        full_url = url + '?' + url_values
-        #self.kodi_helper.log(full_url, xbmc.LOGNOTICE)
-        data = urllib2.urlopen(full_url).read()
-        parsed_json = json.loads(data)
-        result = parsed_json.get('result', None)
-        return result

@@ -2,11 +2,8 @@ import threading
 import SocketServer
 import socket
 from xbmc import Monitor
-from resources.lib.KodiHelper import KodiHelper
 from resources.lib.TimVisionHttpRequestHandler import TimVisionHttpRequestHandler
-
-# helper function to select an unused port on the host machine
-
+from resources.lib import utils
 
 def select_unused_port():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -15,19 +12,15 @@ def select_unused_port():
     sock.close()
     return port
 
-
-kodi_helper = KodiHelper()
-
 # pick & store a port for the internal TimVision HTTP proxy service
 tv_port = select_unused_port()
-kodi_helper.set_setting('timvision_service_port', str(tv_port))
+utils.set_setting('timvision_service_port', str(tv_port))
 
 # server defaults
 SocketServer.TCPServer.allow_reuse_address = True
 
 # configure the TimVision Data Server
-nd_server = SocketServer.TCPServer(
-    ('127.0.0.1', tv_port), TimVisionHttpRequestHandler)
+nd_server = SocketServer.TCPServer(('127.0.0.1', tv_port), TimVisionHttpRequestHandler)
 nd_server.server_activate()
 nd_server.timeout = 1
 
