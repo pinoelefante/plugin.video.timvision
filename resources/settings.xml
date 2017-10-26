@@ -10,6 +10,7 @@
   <category label="Contenuti">
     <setting id="unique_season" type="bool" label="Spiana le serie con un'unica stagione" value="true" default="true"/>
     <setting id="prefer_hd" type="bool" label="Preferisci HD" value="true" default="true"/>
+    <setting id="always_resume" type="bool" label="Riprendi sempre la visione" value="true" default="true"/>
   </category>
   <category label="Debug">
     <setting id="inputstream_kodi17" label="Modalità 17.4 <= Kodi < 18" type="bool" value="true" default="true"/>

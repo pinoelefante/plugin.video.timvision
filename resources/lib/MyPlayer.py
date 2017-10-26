@@ -7,18 +7,22 @@ class MyPlayer(xbmc.Player):
     current_item = None
     current_time = 0
     total_time = 0
+    start_from = 0
 
     listen = False
     playback_thread_stop_event = None
 
-    def setItem(self, url, contentId):
+    def setItem(self, url, contentId, start_point = 0.0):
         self.current_item = url
         self.current_contentId = contentId
+        self.start_from = start_point
         utils.log_on_desktop_file("Setting item ("+self.current_contentId+"): "+url, filename=utils.LOG_PLAYER_FILE)
 
     def onPlayBackStarted(self):
         self.listen = self.current_item == self.getPlayingFile()
         if self.listen:
+            if(self.start_from > 1):
+                self.seekTime(float(self.start_from))
             utils.log_on_desktop_file("Listening ("+self.current_contentId+"): "+str(self.listen), filename=utils.LOG_PLAYER_FILE)
             utils.log_on_desktop_file("Started ("+self.current_contentId+")",utils.LOG_PLAYER_FILE)
             utils.call_timvision_service({"method":"keep_alive", "contentId": self.current_contentId})
@@ -56,7 +60,7 @@ class MyPlayer(xbmc.Player):
 
         complete_percentage = self.current_time * 100.0 / self.total_time
         utils.log_on_desktop_file("Stopping ("+self.current_contentId+") - "+str(complete_percentage)+"%", utils.LOG_PLAYER_FILE)
-        if self.total_time > 0 and complete_percentage >= 99.0:
+        if complete_percentage >= 99.0:
             utils.call_timvision_service({"method":"set_content_seen", "contentId":self.current_contentId})
         else:
             utils.call_timvision_service({"method":"stop_content", "contentId":str(self.current_contentId), "time":int(self.current_time)})
@@ -65,4 +69,5 @@ class MyPlayer(xbmc.Player):
         self.current_contentId = None
         self.current_time = 0
         self.total_time = 0
+        self.start_from = 0
         self.listen = False

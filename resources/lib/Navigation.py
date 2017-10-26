@@ -77,7 +77,8 @@ class Navigation:
                     videoType = params.get("videoType")
                     has_hd = params.get("has_hd", "false")
                     prefer_hd = utils.get_setting("prefer_hd")
-                    self.play_video(contentId, videoType, has_hd, prefer_hd)
+                    start_offset = params.get("startPoint")
+                    self.play_video(contentId, videoType, has_hd, prefer_hd, start_offset)
                 elif action == "open_page":
                     uri = params.get("uri")
                     self.open_category_page(uri)
@@ -198,11 +199,17 @@ class Navigation:
             "fanart": movie["metadata"]["bgImageUrl"],
             "poster": movie["metadata"]["imageUrl"]
         })
+        startOffset = 0.0
+        if "bookmark" in movie["metadata"] and movie["metadata"]["duration"]!=None:
+            startOffset = float(str(movie["metadata"]["bookmark"]))
+            li.setProperty('StartOffset', str(movie["metadata"]["bookmark"])+".0")
+            #li.setProperty('StartPercent', str(percentage))
+
         if mediatype != "tvshow":
             li.setProperty("isPlayable","true")
             li.addStreamInfo("video",{'width': '768', 'height': '432'} if not is_hd else {'width': '1920', 'height': '1080'})
         
-        return self.create_context_menu(contentId,li,mediatype)
+        return self.create_context_menu(contentId,li,mediatype), startOffset
 
     def create_context_menu(self, contentId, li, mediatype):
         """
@@ -255,7 +262,7 @@ class Navigation:
                 pass
             elif layout_item == "SERIES_ITEM":
                 contentId = container["metadata"]["contentId"]
-                li = self.create_list_item(container,contentId)
+                li,offset = self.create_list_item(container,contentId)
                 title_unquoted = container["metadata"]["title"]
                 if isinstance(title_unquoted,unicode):
                     title_unquoted=title_unquoted.encode("utf-8")
@@ -266,9 +273,9 @@ class Navigation:
             elif layout_item=="MOVIE_ITEM" or layout_item=="EPISODE":
                 videoType = "MOVIE" if layout_item == "MOVIE_ITEM" else "EPISODE"
                 contentId = container["id"] if videoType == "MOVIE" else container["metadata"]["contentId"]
-                li = self.create_list_item(container,contentId)
+                li, offset = self.create_list_item(container,contentId)
                 has_hd = self.video_has_hd(container)
-                url = "action=play_item&contentId="+str(contentId)+"&videoType="+videoType+"&has_hd="+str(has_hd)
+                url = "action=play_item&contentId="+str(contentId)+"&videoType="+videoType+"&has_hd="+str(has_hd)+"&startPoint="+str(offset)
                 if not _is_episodes and videoType == "EPISODE":
                     _is_episodes = True
                 xbmcplugin.addDirectoryItem(handle=self.plugin_handle, isFolder=folder, listitem=li, url=self.plugin_dir + "?" + url)
@@ -316,24 +323,6 @@ class Navigation:
             xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=self.plugin_dir+"?"+url, listitem=li, isFolder=True)
         
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
-    """
-    def getCast(self, contentId):
-        cast = utils.call_timvision_service({"method":"get_cast", "contentId":contentId})
-        if cast==None:
-            return
-        directors = []
-        actors = []
-        for member in cast:
-            if member["layout"]=="EDITORIAL_ITEM":
-                nome = member["metadata"]["title"]
-                image = member["metadata"]["imageUrl"]
-                item = {"name":nome, "thumbnail":image}
-                if member["metadata"]["shortDescription"] == "Regista":
-                    directors.extend(item)
-                elif member["metadata"]["shortDescription"] == "Attore":
-                    actors.extend(item)
-        return directors,actors
-    """
 
     def go_search(self):
         keyword = self.kodi_helper.show_text_field("Keyword")
@@ -346,12 +335,10 @@ class Navigation:
         #xbmc.executebuiltin("PlayMedia(%s,1)" % (trailer))
         url = utils.call_timvision_service({"method":"get_season_trailer", "contentId":contentId})
         if url != None:
-            
             xbmc.executebuiltin("XBMC.RunPlugin(plugin://inputstream.adaptive?manifest_type=mpd&)" % (url))
-            
             self.play(url)
 
-    def play_video(self, contentId, videoType,hasHd="false",preferHD="false"):
+    def play_video(self, contentId, videoType,hasHd="false",preferHD="false", startOffset = "0.0"):
         license_info = utils.call_timvision_service(
             {"method": "get_license_video", "contentId": contentId, "videoType": videoType,"prefer_hd":preferHD,"has_hd":hasHd})
         
@@ -363,9 +350,9 @@ class Navigation:
         if license_address == None:
             return False
 
-        self.play(contentId, license_info["mpd_file"],license_address,"AVS_COOKIE="+license_info["avs_cookie"])
+        self.play(contentId, license_info["mpd_file"],license_address,"AVS_COOKIE="+license_info["avs_cookie"], startOffset)
               
-    def play(self, contentId, url, licenseKey=None,licenseHeaders=""):
+    def play(self, contentId, url, licenseKey=None,licenseHeaders="",startOffset = "0.0"):
         inputstream_addon, is_enabled = self.kodi_helper.get_inputstream_addon()
 
         if inputstream_addon == None:
@@ -386,7 +373,13 @@ class Navigation:
         if licenseKey!=None:
             play_item.setProperty(inputstream_addon + '.license_type', 'com.widevine.alpha')
             play_item.setProperty(inputstream_addon + '.license_key', licenseKey+'|'+userAgent+'&'+licenseHeaders+'|R{SSM}|')
-        
+        utils.log_on_desktop_file("resume at: "+startOffset,"other.log")
+           
         play_item.setProperty('inputstreamaddon', "inputstream.adaptive")
-        utils.call_timvision_service({"method":"set_playing_item", "url":url, "contentId":contentId})
+
+        startOffset = float(startOffset)
+        if not utils.get_setting("always_resume"):
+            #TODO chiedere se si vuole riprendere da startOffset
+            startOffset = 0.0
+        utils.call_timvision_service({"method":"set_playing_item", "url":url, "contentId":contentId, "time":startOffset})
         xbmcplugin.setResolvedUrl(handle=self.plugin_handle, succeeded=True, listitem=play_item)

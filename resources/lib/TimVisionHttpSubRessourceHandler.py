@@ -86,7 +86,8 @@ class TimVisionHttpSubRessourceHandler:
     def set_playing_item(self, params):
         url = params.get("url",[""])[0]
         contentId = params.get("contentId",[""])[0]
-        return self.timvision_session.set_playing_media(url, contentId)
+        time = float(params.get("time",["0.0"])[0])
+        return self.timvision_session.set_playing_media(url, contentId, time)
 
     def stop_content(self, params):
         contentId = params.get("contentId")[0]

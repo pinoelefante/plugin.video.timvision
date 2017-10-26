@@ -238,8 +238,8 @@ class TimVisionSession:
                 return resp.content
         return None
 
-    def set_playing_media(self, url, contentId):
-        self.player.setItem(url, contentId)
+    def set_playing_media(self, url, contentId, time):
+        self.player.setItem(url, contentId, time)
 
     def keep_alive(self, contentId):
         url = "/besc?action=KeepAlive&channel={channel}&type={deviceType}&noRefresh=Y&providerName={providerName}&serviceName={serviceName}&contentId="+str(contentId)
