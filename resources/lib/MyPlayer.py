@@ -36,7 +36,7 @@ class MyPlayer(xbmc.Player):
     def onPlayBackPaused(self):
         if self.listen:
             utils.log_on_desktop_file("Paused ("+self.current_contentId+")", filename=utils.LOG_PLAYER_FILE)
-            utils.call_timvision_service({"method":"pause_content", "contentId":self.current_contentId, "time":self.current_time})
+            utils.call_timvision_service({"method":"pause_content", "contentId":self.current_contentId, "time":int(self.current_time)})
     
     def onPlayBackStopped(self):
         if self.listen:
