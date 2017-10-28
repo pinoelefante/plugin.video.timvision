@@ -144,7 +144,6 @@ class TimVisionSession:
 
     def get_license_info(self, contentId, videoType, has_hd=False):
         cp_id,mpd = self.get_mpd_file(contentId, videoType)
-        Logger.log_on_desktop_file("get_license_info (%s - %s)" % (cp_id, mpd),"license.log")
         if cp_id != None:
             assetIdWd = self.get_assetIdWd(mpd)
             if has_hd and utils.get_setting("prefer_hd"):

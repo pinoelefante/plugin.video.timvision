@@ -331,7 +331,7 @@ class Navigation:
         license_info = utils.call_service("get_license_video", {"contentId": contentId, "videoType": videoType,"prefer_hd":preferHD,"has_hd":hasHd})
         
         if utils.get_setting("inputstream_kodi17"):
-            license_address = self.get_service_url()+"?action=get_license&license_url="+urllib.quote(license_info["widevine_url"])
+            license_address = utils.get_service_url()+"?action=get_license&license_url="+urllib.quote(license_info["widevine_url"])
         else:
             license_address = license_info["widevine_url"]
         
