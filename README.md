@@ -11,4 +11,4 @@ Per effettuare il download dell'addon, installare il mio repository scaricando i
 
 **Donazioni**
 
-Nel caso voglia offrirmi un caffè, una birra o addirittura una pizza, [dona con PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=pino.elefante@hotmail.it&lc=IT&item_name=kodiplugin&item_number=APA&currency_code=EUR&bn=PP-DonationsBF:btn_donate_LG.gif:NonHosted)
+Nel caso voglia offrirmi un caffè, una birra o addirittura una pizza, [dona con PayPal](https://www.paypal.me/pinoelefante/)
