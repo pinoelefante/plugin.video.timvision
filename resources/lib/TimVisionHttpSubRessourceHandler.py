@@ -1,18 +1,15 @@
 import urllib
-from resources.lib import utils
+from resources.lib import utils, TimVisionAPI
 
 class TimVisionHttpSubRessourceHandler:
     """ Represents the callable internal server routes & translates/executes them to requests for Netflix"""
 
-    def __init__(self, kodi_helper, timvision_session):
-        self.kodi_helper = kodi_helper
+    def __init__(self, timvision_session):
         self.timvision_session = timvision_session
-        #self.prefetch_login()
 
     def prefetch_login(self):
-        credentials = self.kodi_helper.get_credentials()
-        user = credentials.get('username')
-        passw = credentials.get('password')
+        user = utils.get_setting('username')
+        passw = utils.get_setting('password')
         if user != '' and passw != '':
             self.timvision_session.login(user, passw)
 
@@ -28,34 +25,23 @@ class TimVisionHttpSubRessourceHandler:
     
     def logout(self, params):
         return self.timvision_session.logout()
-
-    def load_serie_seasons(self, params):
-        serieId = params.get('serieId')[0]
-        return self.timvision_session.load_serie_seasons(serieId)
-
-    def load_serie_episodes(self, params):
-        seasonId = params.get('seasonId')[0]
-        return self.timvision_session.load_serie_episodes(seasonId)
+    
+    def get_show_content(self, params):
+        content_id = params.get("contentId")[0]
+        content_type = params.get("contentType")[0]
+        return self.timvision_session.get_show_content(content_id, content_type)
 
     def get_license_video(self, params):
         contentid = params.get("contentId")[0]
-        videoType = params.get("videoType")[0]
-        prefer_hd = utils.get_bool(params.get("prefer_hd",["false"])[0])
+        video_type = params.get("videoType")[0]
         has_hd = utils.get_bool(params.get("has_hd",["false"])[0])
-        return self.timvision_session.get_license_info(contentid, videoType,prefer_hd,has_hd)
+        return self.timvision_session.get_license_info(contentid, video_type,has_hd)
 
-    def load_movies(self, params={}):
-        begin = int(params.get("begin", ["0"])[0])
-        return self.timvision_session.load_all_contents(begin=begin, category="Cinema")
-
-    def load_series(self, params={}):
-        begin = int(params.get("begin", ["0"])[0])
-        return self.timvision_session.load_all_contents(begin=begin, category="Serie")
-
-    def load_kids(self, params={}):
-        begin = int(params.get("begin", ["0"])[0])
-        return self.timvision_session.load_all_contents(begin=begin, category="Kids")
-
+    def load_all_contents(self, params):
+        begin = int(params.get("begin", [0])[0])
+        category = params.get("category")[0]
+        return self.timvision_session.load_all_contents(begin=begin, category=category)
+    
     def get_categories(self, params={}):
         return self.timvision_session.get_menu_categories()
 
@@ -73,7 +59,11 @@ class TimVisionHttpSubRessourceHandler:
 
     def get_season_trailer(self, params):
         contentId = params.get("contentId")[0]
-        return self.timvision_session.getSeasonTrailer(contentId)
+        return self.timvision_session.get_season_trailer(contentId)
+
+    def get_movie_trailer(self, params):
+        content_id = params.get("contentId")[0]
+        return self.timvision_session.get_movie_trailer(content_id)
 
     def get_license(self,params,rawdata): #rawdata is widevine payload
         url = urllib.unquote(params.get("license_url")[0])

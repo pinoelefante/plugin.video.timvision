@@ -1,52 +1,12 @@
-import os
-import platform
-import urllib, urllib2
+import urlparse, urllib, urllib2
 import json
+from resources.lib import Logger
 import xbmc
 import xbmcaddon
-
-LOG_TIMVISION_FILE = "timvision.log"
-LOG_PLAYER_FILE = "player.log"
-LOG_WIDEVINE_FILE = "widevine.log"
 
 def get_bool(text):
     text = text.lower()
     return text=="true"
-
-def log_on_desktop_file(msg, filename=LOG_TIMVISION_FILE):
-    if not get_setting("abilita_log_desktop"):
-        return
-
-    if filename == LOG_TIMVISION_FILE and not get_setting("logd_timvision"):
-        return
-    if filename == LOG_PLAYER_FILE and not get_setting("logd_player"):
-        return
-    if filename == LOG_WIDEVINE_FILE and not get_setting("logd_widevine"):
-        return
-
-    if(msg != None):
-        if isinstance(msg, unicode):
-            msg = msg.encode('utf-8')
-        desktop = get_desktop_directory()
-        filepath = os.path.join(desktop, filename)
-        f = open(filepath, "a")
-        f.writelines(msg + "\n")
-        f.close()
-
-def kodi_log(msg, level=xbmc.LOGNOTICE):
-    """Adds a log entry to the Kodi log
-
-    Parameters
-        ----------
-        msg : :obj:`str`
-        Entry that should be turned into a list item
-
-        level : :obj:`int`
-            Kodi log level
-    """
-    if isinstance(msg, unicode):
-        msg = msg.encode('utf-8')
-    xbmc.log('[%s] %s' % ("TIMVISION", msg.__str__()), level)
 
 def get_setting(key):
     value = xbmcaddon.Addon().getSetting(key)
@@ -54,28 +14,22 @@ def get_setting(key):
         return get_bool(value)
     return value
 
+def open_settings():
+    xbmcaddon.Addon().openSettings()
+    return
+
 def set_setting(key,value):
     xbmcaddon.Addon().setSetting(key, value)
 
-def get_desktop_directory():
-    os_name = platform.system()
-    if os_name == "Windows":
-        return os.path.join(os.environ["HOMEPATH"] , "Desktop")
-    if os_name == "Linux":
-        return os.environ["HOME"]
-    if os_name == "Darwin":
-        return os.environ["HOME"]
-    return ""
+def get_service_url():
+    return 'http://127.0.0.1:' + str(get_setting('timvision_service_port')+"/")
 
-def get_timvision_service_url():
-    return 'http://127.0.0.1:' + str(get_setting('timvision_service_port'))
-
-def call_timvision_service(params):
+def call_service(method,params={}):
+    params.update({"method":method})
     url_values = urllib.urlencode(params)
-    url = get_timvision_service_url()
-    full_url = url + '?' + url_values
+    full_url = get_service_url() + '?' + url_values
     if get_setting("log_all_apicalls"):
-        kodi_log(full_url)
+        Logger.kodi_log(full_url)
     data = urllib2.urlopen(full_url).read()
     parsed_json = json.loads(data)
     result = parsed_json.get('result', None)
@@ -83,3 +37,29 @@ def call_timvision_service(params):
 
 def get_user_agent():
     return 'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0'
+
+def get_parameters_dict_from_url(parameters):
+    return dict(urlparse.parse_qsl(parameters[1:]))
+
+def url_join(baseUrl='', other=''):
+    return baseUrl + ('/' if not baseUrl.endswith('/') and not other.startswith('/') else '') + other
+
+def get_addon(addon_id):
+    is_enabled = False
+    payload = {
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'Addons.GetAddonDetails',
+        'params': {
+            'addonid': addon_id,
+            'properties': ['enabled']
+        }
+    }
+    response = xbmc.executeJSONRPC(json.dumps(payload))
+    data = json.loads(response)
+    if 'error' not in data.keys():
+        if isinstance(data.get('result'), dict):
+            if isinstance(data.get('result').get('addon'), dict):
+                is_enabled = data.get('result').get('addon').get('enabled')
+        return (addon_id, is_enabled)
+    return (None, is_enabled)

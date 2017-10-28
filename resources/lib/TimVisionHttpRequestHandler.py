@@ -1,26 +1,13 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Module: NetflixHttpRequestHandler
-# Created on: 07.03.2017
-
 import BaseHTTPServer
 import json
 from types import FunctionType
 from urlparse import urlparse, parse_qs
-from resources.lib.KodiHelper import KodiHelper
 from resources.lib.TimVisionAPI import TimVisionSession
 from resources.lib.TimVisionHttpSubRessourceHandler import TimVisionHttpSubRessourceHandler
 
-kodi_helper = KodiHelper()
-
 timvision_session = TimVisionSession()
-
-# get list of methods & instance form the sub ressource handler
-methods = [x for x, y in TimVisionHttpSubRessourceHandler.__dict__.items()
-           if type(y) == FunctionType]
-sub_res_handler = TimVisionHttpSubRessourceHandler(
-    kodi_helper=kodi_helper, timvision_session=timvision_session)
-
+methods = [x for x, y in TimVisionHttpSubRessourceHandler.__dict__.items() if type(y) == FunctionType]
+sub_res_handler = TimVisionHttpSubRessourceHandler(timvision_session=timvision_session)
 
 class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """ Represents the callable internal server that dispatches requests to TimVision"""

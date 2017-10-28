@@ -1,27 +1,20 @@
 import sys
 import json
-import urlparse
-import urllib
-import urllib2
-import xbmc
-import xbmcgui
-import xbmcplugin
-from resources.lib import utils
-from resources.lib import TimVisionAPI
-
+import urlparse, urllib, urllib2
+import xbmc, xbmcgui, xbmcplugin
+from resources.lib import utils, Dialogs, TimVisionAPI, Logger
 
 class Navigation:
-    def __init__(self, handle, plugin, kodi_helper):
+    def __init__(self, handle, plugin):
         self.plugin_handle = handle
         self.plugin_dir = plugin
-        self.kodi_helper = kodi_helper
 
     def router(self, parameters):
         if not self.verifica_login():
-            self.kodi_helper.open_settings()
+            utils.open_settings()
             return
 
-        params = self.parameters_string_to_dict(parameters)
+        params = utils.get_parameters_dict_from_url(parameters)
         params_count = len(params)
         if params_count == 0:
             self.create_main_page()
@@ -33,42 +26,30 @@ class Navigation:
                     self.create_category_page(pageId=category_id)
                 elif page == "CINEMA":
                     category_id = params.get("category_id")
-                    self.create_category_page(
-                        pageId=category_id, ha_elenco=True, actionName='CINEMA_ELENCO')
-                elif page == "CINEMA_ELENCO":
-                    items = utils.call_timvision_service(
-                        {"method": "load_movies", "begin": "0", "load_all": "true"})
-                    self.add_items_to_folder(items)
+                    self.create_category_page(pageId=category_id, ha_elenco=True, category_name='Cinema')
                 elif page == "SERIE TV":
                     category_id = params.get("category_id")
-                    self.create_category_page(
-                        pageId=category_id, ha_elenco=True, actionName='SERIE_ELENCO')
-                elif page == "SERIE_ELENCO":
-                    items = utils.call_timvision_service(
-                        {"method": "load_series", "begin": "0", "load_all": "true"})
-                    self.add_items_to_folder(items)
+                    self.create_category_page(pageId=category_id, ha_elenco=True,  category_name='Serie')
                 elif page == "INTRATTENIMENTO":
                     category_id = params.get("category_id")
                     self.create_category_page(pageId=category_id)
                 elif page == "BAMBINI":
                     category_id = params.get("category_id")
-                    self.create_category_page(
-                        pageId=category_id, ha_elenco=True, actionName='BAMBINI_ELENCO')
-                elif page == "BAMBINI_ELENCO":
-                    items = utils.call_timvision_service(
-                        {"method": "load_kids", "begin": "0", "load_all": "true"})
-                    self.add_items_to_folder(items)
+                    self.create_category_page(pageId=category_id, ha_elenco=True,  category_name='Kids')
 
             if params.has_key("action"):
                 action = params.get("action")
-                if action == "apri_serie":
+                if action == "full_list":
+                    category = params.get("category")
+                    items = utils.call_service("load_all_contents", {"begin": 0, "category": category})
+                    self.add_items_to_folder(items)
+                elif action == "apri_serie":
                     id_serie = params.get("id_serie")
                     nome_serie = urllib.unquote(params.get("serieNome",""))
                     self.populate_serie_seasons(id_serie,nome_serie)
                 elif action == "apri_stagione":
                     id_stagione = params.get("id_stagione")
-                    items = utils.call_timvision_service(
-                        {"method": "load_serie_episodes", "seasonId": id_stagione})
+                    items = utils.call_service("get_show_content", {"contentId": id_stagione, "contentType":TimVisionAPI.TVSHOW_CONTENT_TYPE_EPISODES})
                     if self.add_items_to_folder(items):
                         folderTitle = "Stagione "+params.get("seasonNo")
                         xbmcplugin.setPluginCategory(self.plugin_handle, folderTitle)
@@ -76,40 +57,42 @@ class Navigation:
                     contentId = params.get("contentId")
                     videoType = params.get("videoType")
                     has_hd = params.get("has_hd", "false")
-                    prefer_hd = utils.get_setting("prefer_hd")
                     start_offset = params.get("startPoint")
-                    self.play_video(contentId, videoType, has_hd, prefer_hd, start_offset)
+                    self.play_video(contentId, videoType, has_hd, start_offset)
                 elif action == "open_page":
                     uri = params.get("uri")
                     self.open_category_page(uri)
                 elif action == "logout":
-                    utils.call_timvision_service({"method":"logout"})
-                elif action == "play_season_trailer":
-                    contentId = params.get("contentId")
-                    self.play_season_trailer(contentId)
+                    utils.call_service("logout")
+                elif action == "create_trailler_page":
+                    content_type = params.get("content_type")
+                    content_id = params.get("content_id")
+                    self.create_trailer_page(url)
+                elif  action == "play_trailer":
+                    content_id = params.get("contentId")
+                    content_type = params.get("type")
+                    self.play_trailer(content_id, content_type)
                 elif action == "search":
                     self.go_search()
 
     def verifica_login(self, count=0):
-        logged = utils.call_timvision_service({"method":"is_logged"})
+        logged = utils.call_service("is_logged")
         if not logged:
-            credentials = self.kodi_helper.get_credentials()
-            if credentials["username"] != "" and credentials["password"] != "":
-                logged = utils.call_timvision_service({"method":"login", "username":credentials["username"], "password":credentials["password"]})
+            email = utils.get_setting("username")
+            password = utils.get_setting("password")
+            if email != "" and password != "":
+                logged = utils.call_service("login", {"username":email, "password":password})
             if not logged:
                 if count == 0:
-                    username = self.kodi_helper.show_text_field("Email")
-                    password = self.kodi_helper.show_password_field()
-                    self.kodi_helper.set_credentials(username, password)
+                    utils.set_setting("username",Dialogs.get_text_input("Email"))
+                    utils.set_setting("password", Dialogs.get_password_input())
                     return self.verifica_login(count+1)
         return logged
-    def parameters_string_to_dict(self, parameters):
-        return dict(urlparse.parse_qsl(parameters[1:]))
 
     def create_main_page(self):
-        categories = utils.call_timvision_service({"method": "get_categories"})
+        categories = utils.call_service("get_categories")
         if categories == None:
-            self.kodi_helper.show_dialog("Controlla di avere la connessione attiva. Se l'errore persiste, contatta lo sviluppatore del plugin", "Errore")
+            Dialogs.show_dialog("Controlla di avere la connessione attiva. Se l'errore persiste, contatta lo sviluppatore del plugin", "Errore")
             return
         for cat in categories:
             label = cat["metadata"]["label"]
@@ -127,12 +110,12 @@ class Navigation:
 
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
 
-    def create_category_page(self, pageId, ha_elenco=False, actionName=''):
+    def create_category_page(self, pageId, ha_elenco=False, category_name=''):
         if ha_elenco:
             li = xbmcgui.ListItem(label='Elenco completo')
-            xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=self.plugin_dir + "?page=" + actionName, listitem=li, isFolder=True)
+            xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=self.plugin_dir + "?action=full_list&category=" + category_name, listitem=li, isFolder=True)
 
-        pages = utils.call_timvision_service({"method": "get_page", "page": str(pageId)})
+        pages = utils.call_service("get_page", {"page": str(pageId)})
         if pages != None:
             for page in pages:
                 layout = page["layout"]
@@ -148,7 +131,7 @@ class Navigation:
 
     def open_category_page(self, action):
         action = urllib.unquote_plus(action)
-        items = utils.call_timvision_service({"method": "get_contents", "url": action})
+        items = utils.call_service("get_contents", {"url": action})
         self.add_items_to_folder(items)
 
     def video_get_mediatype(self, media):
@@ -159,8 +142,8 @@ class Navigation:
         elif media == "SERIES_ITEM":
             return "tvshow"
         return "movie"
+
     def create_list_item(self, movie,contentId):
-        is_episode = movie["layout"] == "EPISODE"
         is_hd = self.video_has_hd(movie)
         rating_s = str(float(movie["metadata"]["rating"])*2)
         mediatype = self.video_get_mediatype(movie["layout"])
@@ -188,45 +171,33 @@ class Navigation:
             "genre": movie["metadata"]["genre"],
             "mediatype":mediatype
         })
-        if is_episode:
-            li.setInfo("video",
-                       {
-                           "episode": movie["metadata"]["episodeNumber"],
-                           "season": movie["metadata"]["season"]
-                       })
+        if mediatype == "episode":
+            li.setInfo("video", {
+                "episode": movie["metadata"]["episodeNumber"],
+                "season": movie["metadata"]["season"]
+            })
         
         li.setArt({
             "fanart": movie["metadata"]["bgImageUrl"],
             "poster": movie["metadata"]["imageUrl"]
         })
-        startOffset = 0.0
-        if "bookmark" in movie["metadata"] and movie["metadata"]["duration"]!=None:
-            startOffset = float(str(movie["metadata"]["bookmark"]))
-            li.setProperty('StartOffset', str(movie["metadata"]["bookmark"])+".0")
-            #li.setProperty('StartPercent', str(percentage))
 
+        startOffset = movie["metadata"]["bookmark"] if "bookmark" in movie["metadata"] and movie["metadata"]["duration"]!=None else 0.0
+        
         if mediatype != "tvshow":
             li.setProperty("isPlayable","true")
             li.addStreamInfo("video",{'width': '768', 'height': '432'} if not is_hd else {'width': '1920', 'height': '1080'})
         
         return self.create_context_menu(contentId,li,mediatype), startOffset
 
-    def create_context_menu(self, contentId, li, mediatype):
-        """
+    def create_context_menu(self, contentId, li, type):
         actions = []
-
-        if mediatype != "tvshow":
-            actions.append(["Altre opzioni",self.plugin_dir+"?action=other_options&contentId="+contentId])
-            
-        if mediatype == "tvshow_season":
-            trailer_action = "XBMC.RunPlugin("+self.plugin_dir+"?action=play_season_trailer&contentId="+contentId+")"
-            actions.append(["Trailer", trailer_action])
-        
+        if type == "movie":
+            actions.extend([("Play Trailer", "RunPlugin("+self.plugin_dir+"?action=play_trailer&contentId="+contentId+"&type=MOVIE)")])
+        elif type == "TV_SEASON":
+            actions.extend([("Play Trailer", "RunPlugin("+self.plugin_dir+"?action=play_trailer&contentId="+contentId+"&type=TVSHOW)")])
         li.addContextMenuItems(actions)
-        """
         return li
-    def is_content_item(self, l):
-        return l == "SERIES_ITEM" or l == "MOVIE_ITEM" or l == "EPISODE" or l == "COLLECTION_ITEM"
     
     def video_has_hd(self, video):
         for videoType in video["metadata"]["videoType"]:
@@ -238,11 +209,11 @@ class Navigation:
 
     def add_items_to_folder(self, items):
         if items == None:
-            self.kodi_helper.show_dialog("Errore in add_items_to_folder: items is None", "Add items to folder")
-            utils.kodi_log("add_items_to_folder: items is None")
+            Dialogs.show_dialog("Errore in add_items_to_folder: items is None", "Add items to folder")
+            Logger.kodi_log("add_items_to_folder: items is None")
             return False
         if len(items) == 0:
-            self.kodi_helper.show_dialog("Non sono presenti contenuti? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Elenco vuoto")
+            Dialogs.show_dialog("Non sono presenti contenuti? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Elenco vuoto")
             return False
         _is_episodes = False
         for container in items:
@@ -293,22 +264,19 @@ class Navigation:
         return True
 
     def populate_serie_seasons(self, serieId,serieNome):
-        items = utils.call_timvision_service(
-            {"method": "load_serie_seasons", "serieId": serieId})
+        items = utils.call_service("get_show_content", {"contentId": serieId, "contentType":TimVisionAPI.TVSHOW_CONTENT_TYPE_SEASONS})
         if items is None:
-            self.kodi_helper.show_dialog("Errore in populate_serie_seasons: items is None", "Caricamento stagioni")
-            utils.kodi_log("populate_serie_seasons: items is None. SerieId="+serieId+" serieNome="+serieNome)
+            Dialogs.show_dialog("Si e' verificato un errore", "Caricamento stagioni")
+            Logger.kodi_log("populate_serie_seasons: items is None. SerieId="+serieId+" serieNome="+serieNome)
             return
         count = len(items)
         if count == 0:
-            self.kodi_helper.show_dialog("Non sono presenti stagioni? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Possibile errore")
+            Dialogs.show_dialog("Non sono presenti stagioni? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Possibile errore")
             return
-        #xbmcplugin.setContent(self.plugin_handle, "tvshow")
         
-        unique_season = utils.get_setting("unique_season")
-        if count == 1 and unique_season:
+        if count == 1 and utils.get_setting("unique_season"):
             id_stagione = items[0]["metadata"]["contentId"]
-            episodes = utils.call_timvision_service({"method": "load_serie_episodes", "seasonId": id_stagione})
+            episodes = utils.call_service("get_show_content", {"contentId": id_stagione, "contentType":TimVisionAPI.TVSHOW_CONTENT_TYPE_EPISODES})
             if self.add_items_to_folder(episodes):
                 folderTitle = "Stagione "+str(items[0]["metadata"]["season"])
                 xbmcplugin.setPluginCategory(self.plugin_handle, folderTitle)
@@ -318,32 +286,52 @@ class Navigation:
         for season in items:
             li = xbmcgui.ListItem(label="Stagione " + str(season["metadata"]["season"]))
             li.setArt({ "fanart": season["metadata"]["bgImageUrl"] })
-            li = self.create_context_menu(season["metadata"]["contentId"], li, "tvshow_season")
+            li = self.create_context_menu(season["metadata"]["contentId"], li, "TV_SEASON")
             url = "action=apri_stagione&seasonNo="+str(season["metadata"]["season"])+"&id_stagione=" + season["metadata"]["contentId"]
             xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=self.plugin_dir+"?"+url, listitem=li, isFolder=True)
         
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
-
+    
     def go_search(self):
-        keyword = self.kodi_helper.show_text_field("Keyword")
+        keyword = Dialogs.get_text_input("Keyword")
         if keyword == None or len(keyword) == 0:
             return False
-        items = utils.call_timvision_service({"method":"search", "keyword":keyword})
+        items = utils.call_service("search", {"keyword":keyword})
         return self.add_items_to_folder(items)
 
-    def play_season_trailer(self, contentId):
-        #xbmc.executebuiltin("PlayMedia(%s,1)" % (trailer))
-        url = utils.call_timvision_service({"method":"get_season_trailer", "contentId":contentId})
+    def play_trailer(self, content_id, trailer_type):
+        url = None
+        if trailer_type == "MOVIE":
+            url = utils.call_service("get_movie_trailer", {"contentId":content_id})
+        elif trailer_type == "TVSHOW":
+            url = utils.call_service("get_season_trailer", {"contentId":content_id})
         if url != None:
-            xbmc.executebuiltin("XBMC.RunPlugin(plugin://inputstream.adaptive?manifest_type=mpd&)" % (url))
-            self.play(url)
+            inputstream, is_enabled = utils.get_addon('inputstream.adaptive')
+            if inputstream == None:
+                Logger.kodi_log("inputstream.adaptive not found")
+                Dialogs.show_dialog("L'addon inputstream.adaptive non e' installato o e' disabilitato", "Addon non trovato")
+                return
+            if not is_enabled:
+                Logger.kodi_log("inputstream.adaptive addon not enabled")
+                Dialogs.show_dialog("L'addon inputstream.adaptive deve essere abilitato per poter visualizzare i contenuti", "Addon disabilitato")
+                return
+            userAgent = utils.get_user_agent()
+            play_item = xbmcgui.ListItem(path=url)
+            play_item.setContentLookup(False)
+            play_item.setMimeType('application/dash+xml')
+            play_item.setProperty(inputstream + '.stream_headers',userAgent)
+            play_item.setProperty(inputstream + '.manifest_type', 'mpd')
+            play_item.setProperty('inputstreamaddon', "inputstream.adaptive")
+            xbmc.Player().play(item=url, listitem=play_item)
+        else:
+            Dialogs.show_message("Il contenuto non ha un trailer", "Trailer assente")
 
-    def play_video(self, contentId, videoType,hasHd="false",preferHD="false", startOffset = "0.0"):
-        license_info = utils.call_timvision_service(
-            {"method": "get_license_video", "contentId": contentId, "videoType": videoType,"prefer_hd":preferHD,"has_hd":hasHd})
+    def play_video(self, contentId, videoType, hasHd=False, startOffset = "0.0"):
+        preferHD = utils.get_setting("prefer_hd")
+        license_info = utils.call_service("get_license_video", {"contentId": contentId, "videoType": videoType,"prefer_hd":preferHD,"has_hd":hasHd})
         
         if utils.get_setting("inputstream_kodi17"):
-            license_address = self.get_timvision_service_url()+"?action=get_license&license_url="+urllib.quote(license_info["widevine_url"])
+            license_address = self.get_service_url()+"?action=get_license&license_url="+urllib.quote(license_info["widevine_url"])
         else:
             license_address = license_info["widevine_url"]
         
@@ -353,27 +341,26 @@ class Navigation:
         self.play(contentId, license_info["mpd_file"],license_address,"AVS_COOKIE="+license_info["avs_cookie"], startOffset)
               
     def play(self, contentId, url, licenseKey=None,licenseHeaders="",startOffset = "0.0"):
-        inputstream_addon, is_enabled = self.kodi_helper.get_inputstream_addon()
+        inputstream, is_enabled = utils.get_addon('inputstream.adaptive')
 
-        if inputstream_addon == None:
-            utils.kodi_log("inputstream.adaptive not found")
-            self.kodi_helper.show_dialog("L'addon inputstream.adaptive non e' installato o e' disabilitato", "Addon non trovato")
+        if inputstream == None:
+            Logger.kodi_log("inputstream.adaptive not found")
+            Dialogs.show_dialog("L'addon inputstream.adaptive non e' installato o e' disabilitato", "Addon non trovato")
             return
         if not is_enabled:
-            utils.kodi_log("inputstream.adaptive addon not enabled")
-            self.kodi_helper.show_dialog("L'addon inputstream.adaptive deve essere abilitato per poter visualizzare i contenuti", "Addon disabilitato")
+            Logger.kodi_log("inputstream.adaptive addon not enabled")
+            Dialogs.show_dialog("L'addon inputstream.adaptive deve essere abilitato per poter visualizzare i contenuti", "Addon disabilitato")
             return
 
         userAgent = utils.get_user_agent()
         play_item = xbmcgui.ListItem(path=url)
         play_item.setContentLookup(False)
         play_item.setMimeType('application/dash+xml')
-        play_item.setProperty(inputstream_addon + '.stream_headers',userAgent)
-        play_item.setProperty(inputstream_addon + '.manifest_type', 'mpd')
+        play_item.setProperty(inputstream + '.stream_headers',userAgent)
+        play_item.setProperty(inputstream + '.manifest_type', 'mpd')
         if licenseKey!=None:
-            play_item.setProperty(inputstream_addon + '.license_type', 'com.widevine.alpha')
-            play_item.setProperty(inputstream_addon + '.license_key', licenseKey+'|'+userAgent+'&'+licenseHeaders+'|R{SSM}|')
-        utils.log_on_desktop_file("resume at: "+startOffset,"other.log")
+            play_item.setProperty(inputstream + '.license_type', 'com.widevine.alpha')
+            play_item.setProperty(inputstream + '.license_key', licenseKey+'|'+userAgent+'&'+licenseHeaders+'|R{SSM}|')
            
         play_item.setProperty('inputstreamaddon', "inputstream.adaptive")
 
@@ -381,5 +368,5 @@ class Navigation:
         if not utils.get_setting("always_resume"):
             #TODO chiedere se si vuole riprendere da startOffset
             startOffset = 0.0
-        utils.call_timvision_service({"method":"set_playing_item", "url":url, "contentId":contentId, "time":startOffset})
+        utils.call_service("set_playing_item", {"url":url, "contentId":contentId, "time":startOffset})
         xbmcplugin.setResolvedUrl(handle=self.plugin_handle, succeeded=True, listitem=play_item)
