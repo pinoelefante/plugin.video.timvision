@@ -82,6 +82,7 @@ class MyPlayer(xbmc.Player):
         self.current_item = None
         self.current_content_id = None
         self.current_time = 0
+        self.threshold = 0
         self.start_from = 0
         self.listen = False
     
