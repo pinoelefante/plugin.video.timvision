@@ -142,8 +142,8 @@ class TimVisionSession:
                     self.logout()
             self.stop_check_session.wait(600)
 
-    def get_license_info(self, contentId, videoType, has_hd=False):
-        cp_id,mpd = self.get_mpd_file(contentId, videoType)
+    def get_license_info(self, content_id, videoType, has_hd=False):
+        cp_id,mpd = self.get_mpd_file(content_id, videoType)
         if cp_id != None:
             assetIdWd = self.get_assetIdWd(mpd)
             if has_hd and utils.get_setting("prefer_hd"):
@@ -151,7 +151,7 @@ class TimVisionSession:
             return {
                 "mpd_file": mpd,
                 "avs_cookie":self.avs_cookie,
-                "widevine_url": self.widevine_proxy_url.replace("{ContentIdAVS}", contentId).replace("{AssetIdWD}", assetIdWd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", self.service_channel).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
+                "widevine_url": self.widevine_proxy_url.replace("{ContentIdAVS}", content_id).replace("{AssetIdWD}", assetIdWd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", self.service_channel).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
             }
         return None
 
@@ -160,8 +160,8 @@ class TimVisionSession:
         partial = partial[0:partial.find("/")]
         return partial
 
-    def get_mpd_file(self, contentId, videoType):
-        url = "/PLAY?contentId="+contentId+"&deviceType=CHROME&serviceName={serviceName}&type="+videoType
+    def get_mpd_file(self, content_id, videoType):
+        url = "/PLAY?contentId="+content_id+"&deviceType=CHROME&serviceName={serviceName}&type="+videoType
         data = self.send_request(url, baseUrl=self.BASE_URL_TIM)
         if data != None:
             cpId = data["resultObj"]["cp_id"]
@@ -198,8 +198,8 @@ class TimVisionSession:
             return data["resultObj"]["containers"]
         return None
         
-    def getCast(self, contentId):
-        url = "/TRAY/CELEBRITIES?maxResults=50&deviceType={deviceType}&serviceName={serviceName}&contentId="+contentId
+    def getCast(self, content_id):
+        url = "/TRAY/CELEBRITIES?maxResults=50&deviceType={deviceType}&serviceName={serviceName}&contentId="+content_id
         return self.get_contents(url)
 
     def setFavorite(self, contentId, favorite = True):
@@ -252,21 +252,18 @@ class TimVisionSession:
             return True
         return False
 
-    def set_seen(self, contentId):
-        return self.stop_content(contentId, -1)
+    def set_seen(self, contentId, duration):
+        return self.stop_content(contentId, duration, duration)
 
-    def pause_consumption(self, contentId, time):
-        url = "/besc?action=PauseConsumption&channel={channel}&providerName={providerName}&serviceName={serviceName}&bookmark="+str(time)+"&deltaThreshold="+str(time)
+    def pause_consumption(self, contentId, time, threshold):
+        url = "/besc?action=PauseConsumption&channel={channel}&providerName={providerName}&serviceName={serviceName}&bookmark="+str(time)+"&deltaThreshold="+str(threshold)
         r = self.send_request(url, self.BASE_URL_AVS)
         if r != None:
             return True
         return False
 
-    def stop_content(self, contentId, time):
-        url = "/besc?action=StopContent&channel={channel}&providerName={providerName}&serviceName={serviceName}&type=VOD&contentId="+str(contentId)+"&bookmark="+str(time)+"&deltaThreshold="+("100" if time<0 else str(time))+"&section=CATALOGUE" #&deviceId=
-        if contentId==None or contentId=="None":
-            Logger.log_on_desktop_file("STOP CONTENT - ContentId = None")
-            return False
+    def stop_content(self, contentId, time, threshold):
+        url = "/besc?action=StopContent&channel={channel}&providerName={providerName}&serviceName={serviceName}&type=VOD&contentId="+str(contentId)+"&bookmark="+str(time)+"&deltaThreshold="+str(threshold)+"&section=CATALOGUE"
         r = self.send_request(url, self.BASE_URL_AVS)
         if r!=None:
             return True

@@ -72,6 +72,14 @@ class Navigation:
                     content_id = params.get("contentId")
                     content_type = params.get("type")
                     self.play_trailer(content_id, content_type)
+                elif action == "set_seen":
+                    content_id = params.get("contentId")
+                    duration = params.get("duration")
+                    utils.call_service("set_content_seen", {"contentId":content_id, "duration":duration})
+                    xbmc.executebuiltin("Container.Refresh()")
+                elif action == "add_favourite":
+
+                    pass
                 elif action == "search":
                     self.go_search()
 
@@ -188,15 +196,20 @@ class Navigation:
             li.setProperty("isPlayable","true")
             li.addStreamInfo("video",{'width': '768', 'height': '432'} if not is_hd else {'width': '1920', 'height': '1080'})
         
-        return self.create_context_menu(contentId,li,mediatype), startOffset
+        return self.create_context_menu(contentId,li,mediatype, movie), startOffset
 
-    def create_context_menu(self, contentId, li, type):
+    def create_context_menu(self, content_id, li, type, container={}):
         actions = []
         if type == "movie":
-            actions.extend([("Play Trailer", "RunPlugin("+self.plugin_dir+"?action=play_trailer&contentId="+contentId+"&type=MOVIE)")])
+            actions.extend([("Play Trailer", "RunPlugin("+self.plugin_dir+"?action=play_trailer&contentId="+content_id+"&type=MOVIE)")])
+            #actions.extend([("Gia' Visto", "RunPlugin("+self.plugin_dir+"?action=set_seen&contentId="+content_id+"&duration="+str(container["metadata"]["duration"])+")")])
+        elif type == "episode":
+            actions.extend([("Play Trailer della Stagione", "RunPlugin("+self.plugin_dir+"?action=play_trailer&contentId="+contentId+"&type=TVSHOW)")])
+            #actions.extend([("Gia' Visto", "RunPlugin("+self.plugin_dir+"?action=set_seen&contentId="+content_id+"&duration="+str(container["metadata"]["duration"])+")")])
+            pass
         elif type == "TV_SEASON":
-            actions.extend([("Play Trailer", "RunPlugin("+self.plugin_dir+"?action=play_trailer&contentId="+contentId+"&type=TVSHOW)")])
-        li.addContextMenuItems(actions)
+            actions.extend([("Play Trailer", "RunPlugin("+self.plugin_dir+"?action=play_trailer&contentId="+content_id+"&type=TVSHOW)")])
+        li.addContextMenuItems(actions, True)
         return li
     
     def video_has_hd(self, video):

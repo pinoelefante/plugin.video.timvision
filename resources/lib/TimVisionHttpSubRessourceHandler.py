@@ -32,10 +32,10 @@ class TimVisionHttpSubRessourceHandler:
         return self.timvision_session.get_show_content(content_id, content_type)
 
     def get_license_video(self, params):
-        contentid = params.get("contentId")[0]
+        content_id = params.get("contentId")[0]
         video_type = params.get("videoType")[0]
-        has_hd = utils.get_bool(params.get("has_hd",["false"])[0])
-        return self.timvision_session.get_license_info(contentid, video_type,has_hd)
+        has_hd = utils.get_bool(params.get("has_hd", ["false"])[0])
+        return self.timvision_session.get_license_info(content_id, video_type,has_hd)
 
     def load_all_contents(self, params):
         begin = int(params.get("begin", [0])[0])
@@ -54,12 +54,12 @@ class TimVisionHttpSubRessourceHandler:
         return self.timvision_session.get_contents(url)
 
     def get_cast(self, params):
-        contentId = params.get("contentId")[0]
-        return self.timvision_session.getCast(contentId)
+        content_id = params.get("contentId")[0]
+        return self.timvision_session.getCast(content_id)
 
     def get_season_trailer(self, params):
-        contentId = params.get("contentId")[0]
-        return self.timvision_session.get_season_trailer(contentId)
+        content_id = params.get("contentId")[0]
+        return self.timvision_session.get_season_trailer(content_id)
 
     def get_movie_trailer(self, params):
         content_id = params.get("contentId")[0]
@@ -75,24 +75,27 @@ class TimVisionHttpSubRessourceHandler:
 
     def set_playing_item(self, params):
         url = params.get("url",[""])[0]
-        contentId = params.get("contentId",[""])[0]
+        content_id = params.get("contentId",[""])[0]
         time = float(params.get("time",["0.0"])[0])
-        return self.timvision_session.set_playing_media(url, contentId, time)
+        return self.timvision_session.set_playing_media(url, content_id, time)
 
     def stop_content(self, params):
-        contentId = params.get("contentId")[0]
+        content_id = params.get("contentId")[0]
         time = params.get("time", ["0"])[0]
-        return self.timvision_session.stop_content(contentId, time)
+        threshold = params.get("threshold")[0]
+        return self.timvision_session.stop_content(content_id, time, threshold)
 
     def pause_content(self, params):
-        contentId = params.get("contentId")[0]
+        content_id = params.get("contentId")[0]
         time = params.get("time", ["0"])[0]
-        return self.timvision_session.pause_consumption(contentId, time)
+        threshold = params.get("threshold")[0]
+        return self.timvision_session.pause_consumption(content_id, time, threshold)
 
     def set_content_seen(self, params):
-        contentId = params.get("contentId")[0]
-        return self.timvision_session.set_seen(contentId)
+        content_id = params.get("contentId")[0]
+        duration = params.get("duration")[0]
+        return self.timvision_session.set_seen(content_id, duration)
 
     def keep_alive(self, params):
-        contentId = params.get("contentId")[0]
-        return self.timvision_session.keep_alive(contentId)
+        content_id = params.get("contentId")[0]
+        return self.timvision_session.keep_alive(content_id)
