@@ -1,8 +1,7 @@
 import urlparse, urllib, urllib2
 import json
 from resources.lib import Logger
-import xbmc
-import xbmcaddon
+import xbmc, xbmcaddon
 
 def get_bool(text):
     text = text.lower()
@@ -63,3 +62,16 @@ def get_addon(addon_id):
                 is_enabled = data.get('result').get('addon').get('enabled')
         return (addon_id, is_enabled)
     return (None, is_enabled)
+
+def list_to_string(mylist, separator=', '):
+    if mylist is None:
+        return ""
+    content_list = ""
+    for item in mylist:
+        content_list+=("%s%s" % (separator if len(content_list) > 0 else '', str(item)))
+    return content_list
+
+def string_to_list(mystring, separator):
+    if mystring is None:
+        return []
+    return mystring.split(separator)

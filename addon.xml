@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.timvision" name="TIMVISION" version="1.0.10" provider-name="pinoelefante">
+<addon id="plugin.video.timvision" name="TIMVISION" version="1.0.11" provider-name="pinoelefante">
   <requires>
     <import addon="xbmc.python" version="2.25.0"/>
     <import addon="script.module.requests" version="2.12.4"/>
@@ -10,7 +10,7 @@
   <extension point="xbmc.service" library="service.py" start="login" />
   <extension point="xbmc.addon.metadata">
     <summary lang="it">TIMVision</summary>
-    <description lang="it">TIMVision Video OnDemand Addon</description>
+    <description lang="it">TIMVISION Video OnDemand Addon</description>
     <disclaimer lang="it">Some parts of this addon may not be legal in your country of residence - please check with your local laws before installing.</disclaimer>
     <assets>
       <icon>resources\logo.png</icon>
@@ -19,10 +19,10 @@
     <platform>all</platform>
     <license>GPL</license>
     <source>https://github.com/pinoelefante/plugin.video.timvision</source>
-    <news>v1.0.10
-- bugfix
-v1.0.9
-- Trailer per film e stagioni di serie tv
+    <news>v1.0.11
+- Calcolo del delta threshold
+- "Continua a guardare" ora mostra l'episodio della serie da vedere
+- Code refactoring
     </news>
   </extension>
 </addon>

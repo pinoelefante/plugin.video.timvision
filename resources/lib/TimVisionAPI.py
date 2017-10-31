@@ -2,7 +2,6 @@ import json
 import threading
 import time
 import urllib
-import os
 from resources.lib import Logger, utils
 from requests import session, cookies
 from resources.lib.MyPlayer import MyPlayer
@@ -13,7 +12,6 @@ AREA_FREE_PAY = "ALL"
 
 TVSHOW_CONTENT_TYPE_SEASONS = "SERIES"
 TVSHOW_CONTENT_TYPE_EPISODES = "SEASON"
-
 
 class TimVisionSession:
     BASE_URL_TIM = "https://www.timvision.it/TIM/{appVersion}/PRODSVOD_WEB/IT/{channel}/ITALY"
@@ -129,7 +127,7 @@ class TimVisionSession:
                     if content_type == TVSHOW_CONTENT_TYPE_SEASONS:
                         content.append(s)
                     elif content_type == TVSHOW_CONTENT_TYPE_EPISODES:
-                        content = s["items"]
+                        content = [item for item in s["items"] if item["layout"]=="EPISODE"]
             return content
         return None
     
@@ -148,10 +146,13 @@ class TimVisionSession:
             assetIdWd = self.get_assetIdWd(mpd)
             if has_hd and utils.get_setting("prefer_hd"):
                 mpd=mpd.replace("_SD.mpd","_HD.mpd")
+            wv_url = self.widevine_proxy_url.replace("{ContentIdAVS}", content_id).replace("{AssetIdWD}", assetIdWd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", self.service_channel).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
+            if utils.get_setting("inputstream_kodi17"):
+                wv_url = utils.url_join(utils.get_service_url(), "?action=get_license&license_url=%s" % (urllib.quote(wv_url)))
             return {
                 "mpd_file": mpd,
                 "avs_cookie":self.avs_cookie,
-                "widevine_url": self.widevine_proxy_url.replace("{ContentIdAVS}", content_id).replace("{AssetIdWD}", assetIdWd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", self.service_channel).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
+                "widevine_url": wv_url
             }
         return None
 

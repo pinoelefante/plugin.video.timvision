@@ -1,5 +1,5 @@
 import urllib
-from resources.lib import utils, TimVisionAPI
+from resources.lib import utils
 
 class TimVisionHttpSubRessourceHandler:
     """ Represents the callable internal server routes & translates/executes them to requests for Netflix"""
