@@ -75,3 +75,9 @@ def string_to_list(mystring, separator):
     if mystring is None:
         return []
     return mystring.split(separator)
+
+def get_timestring_from_seconds(seconds):
+    seconds = int(seconds)
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    return "%d:%02d:%02d" % (h, m, s)

@@ -171,7 +171,7 @@ class Navigation:
         license_info = utils.call_service("get_license_video", {"contentId": content_id, "videoType": video_type, "has_hd":has_hd})
         self.play(content_id, license_info["mpd_file"],license_info["widevine_url"],"AVS_COOKIE="+license_info["avs_cookie"], startOffset)
               
-    def play(self, content_id=None, url=None, licenseKey=None,licenseHeaders="",start_offset = "0.0"):
+    def play(self, content_id=None, url=None, licenseKey=None,licenseHeaders="",start_offset = 0.0):
         inputstream, is_enabled = utils.get_addon('inputstream.adaptive')
 
         if inputstream == None:
@@ -194,9 +194,10 @@ class Navigation:
         if licenseKey!=None:
             play_item.setProperty(inputstream + '.license_type', 'com.widevine.alpha')
             play_item.setProperty(inputstream + '.license_key', licenseKey+'|'+user_agent+'&'+licenseHeaders+'|R{SSM}|')
-            if not utils.get_setting("always_resume"):
-                #TODO chiedere se si vuole riprendere da startOffset
-                start_offset = 0.0
+            if not utils.get_setting("always_resume") and float(start_offset) > 10:
+                message = "Vuoi riprendere la visione da %s?" % (utils.get_timestring_from_seconds(float(start_offset)))
+                start_offeset = start_offset if Dialogs.ask(message, "Riprendi visione") else 0.0
+            
             utils.call_service("set_playing_item", {"url":url, "contentId":content_id, "time":start_offset})
             xbmcplugin.setResolvedUrl(handle=self.plugin_handle, succeeded=True, listitem=play_item)
         else:
