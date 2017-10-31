@@ -68,7 +68,7 @@ def list_to_string(mylist, separator=', '):
         return ""
     content_list = ""
     for item in mylist:
-        content_list+=("%s%s" % (separator if len(content_list) > 0 else '', str(item)))
+        content_list+=("%s%s" % (separator if len(content_list) > 0 else '', item.encode('utf-8')))
     return content_list
 
 def string_to_list(mystring, separator):
