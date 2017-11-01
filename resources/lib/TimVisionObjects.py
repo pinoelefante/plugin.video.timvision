@@ -134,7 +134,7 @@ class TimVisionContent(TimVisionBaseObject):
         elif self.mediatype == ITEM_COLLECTION:
             url = "?action=open_page&uri=" + urllib.quote_plus(self.content_id)
         elif self.mediatype in [ITEM_MOVIE, ITEM_EPISODE]:
-            url = "?action=play_item&contentId=%s&videoType=%s&has_hd=%s&startPoint=%s" % (str(self.content_id), self.mediatype, str(self.is_hd_available), str(self.bookmark))
+            url = "?action=play_item&contentId=%s&videoType=%s&has_hd=%s&startPoint=%s&contentType=%s&duration=%s" % (str(self.content_id), self.mediatype, str(self.is_hd_available), str(self.bookmark), self.mediatype, str(self.duration))
             list_item.setProperty("isPlayable","true")
             list_item.addStreamInfo("video",{'width': '768', 'height': '432'} if not self.is_hd_available else {'width': '1920', 'height': '1080'})
 

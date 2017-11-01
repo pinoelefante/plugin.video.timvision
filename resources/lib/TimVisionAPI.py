@@ -13,34 +13,36 @@ AREA_FREE_PAY = "ALL"
 TVSHOW_CONTENT_TYPE_SEASONS = "SERIES"
 TVSHOW_CONTENT_TYPE_EPISODES = "SEASON"
 
-class TimVisionSession:
+DEVICE_TYPE = 'WEB'
+SERVICE_NAME = 'CUBOVISION'
+SERVICE_CHANNEL = 'CUBOWEB'
+PROVIDER_NAME = "TELECOMITALIA"
+
+class TimVisionSession(object):
     BASE_URL_TIM = "https://www.timvision.it/TIM/{appVersion}/PRODSVOD_WEB/IT/{channel}/ITALY"
     BASE_URL_AVS = "https://www.timvision.it/AVS"
-    deviceType = 'WEB'
-    service_name = 'CUBOVISION'
-    service_channel = 'CUBOWEB'
-    providerName = "TELECOMITALIA"
-    app_version = '10.0.47'
+    app_version = '10.4.11'
     api_endpoint = session()
     license_endpoint = session()
     user_http_header = "X-Avs-Username"
-    sessionLoginHash = None
+    session_login_hash = None
     widevine_proxy_url = "https://license.cubovision.it/WidevineManager/WidevineManager.svc/GetLicense/{ContentIdAVS}/{AssetIdWD}/{CpId}/{Type}/{ClientTime}/{Channel}/{DeviceType}"
-    player = MyPlayer()
+    player = None
+    last_time_request_received = 0
 
     def __init__(self):
-        player = MyPlayer()
+        self.player = MyPlayer()
         self.api_endpoint.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0',
+            'User-Agent': utils.get_user_agent(),
             'Accept-Encoding': 'gzip, deflate',
         })
         self.license_endpoint.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0',
+            'User-Agent': utils.get_user_agent(),
             'Accept-Encoding': 'gzip, deflate',
             'Host': 'license.timvision.it',
             'Origin': 'https://www.timvision.it'
         })
-        self.setup()
+        self.init_ok = self.setup()
 
     def setup(self):
         return self.load_app_version() and self.load_app_settings()
@@ -66,13 +68,13 @@ class TimVisionSession:
         data = {
             'username': username,
             'password': password,
-            'customData': '{"customData":[{"name":"deviceType","value":' + self.deviceType + '},{"name":"deviceVendor","value":""},{"name":"accountDeviceModel","value":""},{"name":"FirmwareVersion","value":""},{"name":"Loader","value":""},{"name":"ResidentApp","value":""},{"name":"DeviceLanguage","value":"it"},{"name":"NetworkType","value":""},{"name":"DisplayDimension","value":""},{"name":"OSversion","value":"Windows 10"},{"name":"AppVersion","value":""},{"name":"DeviceRooted","value":""},{"name":"NetworkOperatoreName","value":""},{"name":"ServiceOperatorName","value":""},{"name":"Custom1","value":"Firefox"},{"name":"Custom2","value":54},{"name":"Custom3","value":"1920x1080"},{"name":"Custom4","value":"PC"},{"name":"Custom5","value":""},{"name":"Custom6","value":""},{"name":"Custom7","value":""},{"name":"Custom8","value":""},{"name":"Custom9","value":""}]}'
+            'customData': '{"customData":[{"name":"deviceType","value":' + DEVICE_TYPE + '},{"name":"deviceVendor","value":""},{"name":"accountDeviceModel","value":""},{"name":"FirmwareVersion","value":""},{"name":"Loader","value":""},{"name":"ResidentApp","value":""},{"name":"DeviceLanguage","value":"it"},{"name":"NetworkType","value":""},{"name":"DisplayDimension","value":""},{"name":"OSversion","value":"Windows 10"},{"name":"AppVersion","value":""},{"name":"DeviceRooted","value":""},{"name":"NetworkOperatoreName","value":""},{"name":"ServiceOperatorName","value":""},{"name":"Custom1","value":"Firefox"},{"name":"Custom2","value":54},{"name":"Custom3","value":"1920x1080"},{"name":"Custom4","value":"PC"},{"name":"Custom5","value":""},{"name":"Custom6","value":""},{"name":"Custom7","value":""},{"name":"Custom8","value":""},{"name":"Custom9","value":""}]}'
         }
         url = "/besc?action=Login&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}"
         r = self.send_request(url=url, baseUrl=self.BASE_URL_AVS, method="POST", data=data)
         if r != None:
             self.api_endpoint.headers.__setitem__(self.user_http_header, r["resultObj"])
-            self.sessionLoginHash = r["extObject"]["hash"]
+            self.session_login_hash = r["extObject"]["hash"]
             self.avs_cookie = self.api_endpoint.cookies.get("avs_cookie")
             self.license_endpoint.headers.__setitem__('AVS_COOKIE', self.avs_cookie)
             self.stop_check_session = threading.Event()
@@ -82,22 +84,31 @@ class TimVisionSession:
         return False
 
     def logout(self):
+        """ deviceId not present (javascript localstorage)
         url = "/besc?action=Logout&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}"
         r = self.send_request(url, baseUrl=self.BASE_URL_AVS)
         if r != None:
             self.api_endpoint.cookies.clear()
-            self.sessionLoginHash = None
+            self.session_login_hash = None
             self.api_endpoint.headers.pop(self.user_http_header, None)
             if self.stop_check_session!=None:
                 self.stop_check_session.set()
             return True
         return False
-
+        """
+        self.api_endpoint.cookies.clear()
+        self.session_login_hash = None
+        self.api_endpoint.headers.pop(self.user_http_header, None)
+        if self.stop_check_session!=None:
+            self.stop_check_session.set()
+        return True
     def is_logged(self):
-        return self.sessionLoginHash != None
+        if not self.init_ok:
+            self.init_ok = self.setup()
+        return self.session_login_hash != None
 
     def __compile_url(self, url):
-        return url.replace("{appVersion}", self.app_version).replace("{channel}", self.service_channel).replace("{serviceName}", self.service_name).replace("{deviceType}", self.deviceType).replace("{providerName}", self.providerName)
+        return url.replace("{appVersion}", self.app_version).replace("{channel}", SERVICE_CHANNEL).replace("{serviceName}", SERVICE_NAME).replace("{deviceType}", DEVICE_TYPE).replace("{providerName}", PROVIDER_NAME)
 
     def send_request(self, url, baseUrl, method="GET", data={}):
         if not url.startswith("https://"):
@@ -127,7 +138,7 @@ class TimVisionSession:
                     if content_type == TVSHOW_CONTENT_TYPE_SEASONS:
                         content.append(s)
                     elif content_type == TVSHOW_CONTENT_TYPE_EPISODES:
-                        content = [item for item in s["items"] if item["layout"]=="EPISODE"]
+                        content = [item for item in s["items"] if item["layout"] == "EPISODE"]
             return content
         return None
     
@@ -135,18 +146,23 @@ class TimVisionSession:
         url = "/besc?action=CheckSession&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}"
         while not self.stop_check_session.is_set():
             r = self.send_request(url=url, baseUrl=self.BASE_URL_AVS)
-            if r != None:
-                if r["resultObj"]["sessionFlag"] == "N":
-                    self.logout()
+            if self.is_user_inactive() or (r != None and r["resultObj"]["sessionFlag"] == "N"):
+                self.logout()
             self.stop_check_session.wait(600)
 
+    def is_user_inactive(self):
+        last_activity = max(self.last_time_request_received, self.player.get_last_time_activity())
+        if time.time() - last_activity > 3600: #1 ora = 3600
+            return True
+        return False
+    
     def get_license_info(self, content_id, videoType, has_hd=False):
         cp_id,mpd = self.get_mpd_file(content_id, videoType)
         if cp_id != None:
             assetIdWd = self.get_assetIdWd(mpd)
             if has_hd and utils.get_setting("prefer_hd"):
-                mpd=mpd.replace("_SD.mpd","_HD.mpd")
-            wv_url = self.widevine_proxy_url.replace("{ContentIdAVS}", content_id).replace("{AssetIdWD}", assetIdWd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", self.service_channel).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
+                mpd=mpd.replace("_SD.mpd", "_HD.mpd")
+            wv_url = self.widevine_proxy_url.replace("{ContentIdAVS}", content_id).replace("{AssetIdWD}", assetIdWd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", SERVICE_CHANNEL).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
             if utils.get_setting("inputstream_kodi17"):
                 wv_url = utils.url_join(utils.get_service_url(), "?action=get_license&license_url=%s" % (urllib.quote(wv_url)))
             return {
@@ -194,7 +210,7 @@ class TimVisionSession:
         return self.get_contents(url)
 
     def get_contents(self, url, data={}):
-        data = self.send_request(url,baseUrl=self.BASE_URL_TIM, data=data)
+        data = self.send_request(url, baseUrl=self.BASE_URL_TIM, data=data)
         if data != None:
             return data["resultObj"]["containers"]
         return None
@@ -243,8 +259,8 @@ class TimVisionSession:
                 return resp.content
         return None
 
-    def set_playing_media(self, url, contentId, time):
-        self.player.setItem(url, contentId, time)
+    def set_playing_media(self, url, contentId, start_time, content_type, duration):
+        self.player.setItem(url, contentId, start_time, content_type, duration)
 
     def keep_alive(self, contentId):
         url = "/besc?action=KeepAlive&channel={channel}&type={deviceType}&noRefresh=Y&providerName={providerName}&serviceName={serviceName}&contentId="+str(contentId)
@@ -269,3 +285,7 @@ class TimVisionSession:
         if r!=None:
             return True
         return False
+
+    def get_recommended_by_content_id(self, content_id):
+        url = "/TRAY/RECOM?deviceType={deviceType}&serviceName={serviceName}&dataSet=RICH&recomType=MORE_LIKE_THIS&contentId="+content_id+"&maxResults=25"
+        return self.get_contents(url)

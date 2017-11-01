@@ -1,11 +1,17 @@
 import urllib
+import time
 from resources.lib import utils
 
-class TimVisionHttpSubRessourceHandler:
-    """ Represents the callable internal server routes & translates/executes them to requests for Netflix"""
-
+class TimVisionHttpSubRessourceHandler(object):
     def __init__(self, timvision_session):
         self.timvision_session = timvision_session
+
+    def time_log(self):
+        """
+            Called by HttpRequestHandler.
+            Save the timestamp of the last request received
+        """
+        self.timvision_session.last_time_request_received = time.time()
 
     def prefetch_login(self):
         user = utils.get_setting('username')
@@ -76,8 +82,10 @@ class TimVisionHttpSubRessourceHandler:
     def set_playing_item(self, params):
         url = params.get("url",[""])[0]
         content_id = params.get("contentId",[""])[0]
-        time = float(params.get("time",["0.0"])[0])
-        return self.timvision_session.set_playing_media(url, content_id, time)
+        start_time = float(params.get("time",["0.0"])[0])
+        content_type = params.get("videoType")[0]
+        duration = params.get("duration")[0]
+        return self.timvision_session.set_playing_media(url, content_id, start_time, content_type, duration)
 
     def stop_content(self, params):
         content_id = params.get("contentId")[0]

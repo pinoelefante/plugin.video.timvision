@@ -19,7 +19,7 @@ class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         method = params.get('method', [None])[0]
 
         # not method given
-        if method == None:
+        if method is None:
             self.send_error(500, 'No method declared')
             return
 
@@ -28,6 +28,7 @@ class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_error(404, 'Method ' + str(method) + ' not found. Available methods: ' + str(methods))
             return
         # call method & get the result
+        getattr(sub_res_handler, "time_log")()
         result = getattr(sub_res_handler, method)(params)
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
@@ -41,7 +42,7 @@ class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         method = params.get("action")[0]
         
         # not method given
-        if method == None:
+        if method is None:
             self.send_error(500, 'No method declared')
             return
 
@@ -52,6 +53,7 @@ class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         
         rawdata = self.rfile.read(int(self.headers.getheader('Content-Length')))
         # call method & get the result
+        getattr(sub_res_handler, "time_log")()
         result = getattr(sub_res_handler, method)(params,rawdata)
         
         self.send_response(200 if result!=None else 500)

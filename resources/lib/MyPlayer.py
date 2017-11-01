@@ -1,24 +1,37 @@
-import xbmc
 import threading
 import time
-from resources.lib import utils, Logger
+from collections import deque
+from resources.lib import utils, Logger, TimVisionObjects
+import xbmc
 
 class MyPlayer(xbmc.Player):
     current_content_id = None
     current_item = None
     current_time = 0
+    total_time = 0
     start_from = 0
     threshold = 0.0
-
+    current_video_type = ''
     listen = False
     playback_thread_stop_event = None
     is_paused = False
 
-    def setItem(self, url, content_id, start_point = 0.0):
+    last_time_end = 0
+
+    def __init__(self):
+        super(MyPlayer, self).__init__()
+        self.playlist = deque()
+
+    def enqueue(self, items):
+        self.playlist.extend(items)
+
+    def setItem(self, url, content_id, start_point = 0.0, content_type='', total_time = 0):
         self.current_item = url
         self.current_content_id = content_id
         self.start_from = start_point
-        Logger.log_on_desktop_file("Setting item ("+self.current_content_id+"): "+url, filename=Logger.LOG_PLAYER_FILE)
+        self.current_video_type = content_type
+        self.total_time = int(total_time)
+        Logger.log_on_desktop_file("Setting item (%s - %s) Duration (%d): %s" % (content_id, content_type, self.total_time, url), filename=Logger.LOG_PLAYER_FILE)
 
     def onPlayBackStarted(self):
         self.listen = self.current_item == self.getPlayingFile()
@@ -63,21 +76,29 @@ class MyPlayer(xbmc.Player):
         self.is_paused = False
 
     def check_time(self):
-        total_time = self.getTotalTime()
+        proposed = False
         while not self.playback_thread_stop_event.isSet():
-            last_time = self.current_time
             if self.isPlaying():
-                self.current_time = self.getTime()
-                if self.current_time > last_time:
-                    Logger.log_on_desktop_file("GetTime ("+self.current_content_id+"): "+str(self.current_time) + "/" + str(total_time), filename=Logger.LOG_PLAYER_FILE)
-                #TODO controllare la percentuale di completamento per proporre nuovo episodio
+                self.current_time = int(self.getTime())
+
+                if self.current_time > self.total_time: #happens at the beginning of the video
+                    continue
+
+                remaining = self.total_time - self.current_time
+                if self.current_video_type == TimVisionObjects.ITEM_MOVIE and remaining <= 120 and not proposed:
+                    Logger.log_on_desktop_file("Proposing suggested movies", Logger.LOG_PLAYER_FILE)
+                    proposed = True
+                elif self.current_video_type == TimVisionObjects.ITEM_EPISODE and remaining <= 30 and not proposed and utils.get_setting("play_next_episode"):
+                    Logger.log_on_desktop_file("Proposing next episode", Logger.LOG_PLAYER_FILE)
+                    proposed = True
+
             self.playback_thread_stop_event.wait(5)
 
-        complete_percentage = self.current_time * 100.0 / total_time
-        Logger.log_on_desktop_file("Stopping ("+self.current_content_id+") - "+str(complete_percentage)+"%", Logger.LOG_PLAYER_FILE)
-        if complete_percentage >= 99.0:
-            utils.call_service("set_content_seen", {"contentId":self.current_content_id, "duration": int(total_time)})
-        else:
+        complete_percentage = self.current_time * 100.0 / self.total_time
+        Logger.log_on_desktop_file("Stopping (%s) - %.3f%%" % (self.current_content_id, complete_percentage), Logger.LOG_PLAYER_FILE)
+        if complete_percentage >= 97.5:
+            utils.call_service("set_content_seen", {"contentId":self.current_content_id, "duration": int(self.total_time)})
+        elif self.current_time > 10:
             utils.call_service("stop_content", {"contentId":str(self.current_content_id), "time":int(self.current_time), "threshold": int(self.threshold)})
         self.current_item = None
         self.current_content_id = None
@@ -85,6 +106,9 @@ class MyPlayer(xbmc.Player):
         self.threshold = 0
         self.start_from = 0
         self.listen = False
+        self.last_time_end = time.time()
+        self.is_paused = False
+        self.total_time = 0
     
     def threshold_calculation(self):
         last_check = time.time()
@@ -96,3 +120,8 @@ class MyPlayer(xbmc.Player):
                 diff_time = curr_check - last_check
                 self.threshold+=diff_time
             last_check = curr_check
+    
+    def get_last_time_activity(self):
+        if self.isPlaying():
+            return time.time()
+        return self.last_time_end

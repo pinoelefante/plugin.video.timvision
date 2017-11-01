@@ -1,13 +1,10 @@
 import sys
 from resources.lib.Navigation import Navigation
 
-plugin_dir = sys.argv[0]
-plugin_handle = int(sys.argv[1])
+PLUGIN_DIR = sys.argv[0]
+PLUGIN_HANDLE = int(sys.argv[1])
 
-navigation = Navigation(
-    handle=plugin_handle,
-    plugin=plugin_dir
-)
+NAVIGATION = Navigation(handle=PLUGIN_HANDLE, plugin=PLUGIN_DIR)
 
 if __name__ == '__main__':
-    navigation.router(parameters=sys.argv[2])
+    NAVIGATION.router(parameters=sys.argv[2])
