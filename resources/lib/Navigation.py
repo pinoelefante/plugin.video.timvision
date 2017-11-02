@@ -56,8 +56,9 @@ class Navigation(object):
                     duration = params.get("duration")
                     self.play_video(content_id, video_type, has_hd, start_offset, duration)
                 elif action == "open_page":
-                    uri = urllib.unquote_plus(params.get("uri"))
+                    uri = urllib.unquote_plus(params.get("uri")).replace("maxResults=30","maxResults=50").replace("&addSeeMore=50","")
                     items = utils.call_service("get_contents", {"url": uri})
+                    items = [x for x in items if x["layout"]!="SEE_MORE"]
                     self.add_items_to_folder(items)
                 elif action == "logout":
                     utils.call_service("logout")
