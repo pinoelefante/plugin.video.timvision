@@ -25,7 +25,7 @@ class MyPlayer(xbmc.Player):
     def enqueue(self, items):
         self.playlist.extend(items)
 
-    def setItem(self, url, content_id, start_point = 0.0, content_type='', total_time = 0):
+    def setItem(self, url, content_id, start_point=0.0, content_type='', total_time=0):
         self.current_item = url
         self.current_content_id = content_id
         self.start_from = start_point
@@ -37,10 +37,10 @@ class MyPlayer(xbmc.Player):
         self.listen = self.current_item == self.getPlayingFile()
         if not self.listen:
             return
-        if(self.start_from > 1):
+        if self.start_from >= 10:
             self.seekTime(float(self.start_from))
         Logger.log_on_desktop_file("Listening ("+self.current_content_id+"): "+str(self.listen), filename=Logger.LOG_PLAYER_FILE)
-        Logger.log_on_desktop_file("Started ("+self.current_content_id+")",Logger.LOG_PLAYER_FILE)
+        Logger.log_on_desktop_file("Started ("+self.current_content_id+")", Logger.LOG_PLAYER_FILE)
         utils.call_service("keep_alive", {"contentId": self.current_content_id})
         self.playback_thread_stop_event = threading.Event()
         check_thread = threading.Thread(target=self.check_time)
@@ -55,14 +55,14 @@ class MyPlayer(xbmc.Player):
             return
         Logger.log_on_desktop_file("Ended ("+self.current_content_id+")", filename=Logger.LOG_PLAYER_FILE)
         self.playback_thread_stop_event.set()
-            
+
     def onPlayBackPaused(self):
         if not self.listen:
             return
         Logger.log_on_desktop_file("Paused ("+self.current_content_id+")", filename=Logger.LOG_PLAYER_FILE)
         utils.call_service("pause_content", {"contentId":self.current_content_id, "time":int(self.current_time), "threshold":int(self.threshold)})
         self.is_paused = True
-    
+
     def onPlayBackStopped(self):
         if not self.listen:
             return
@@ -109,7 +109,7 @@ class MyPlayer(xbmc.Player):
         self.last_time_end = time.time()
         self.is_paused = False
         self.total_time = 0
-    
+
     def threshold_calculation(self):
         last_check = time.time()
         curr_check = last_check
@@ -118,9 +118,9 @@ class MyPlayer(xbmc.Player):
             curr_check = time.time()
             if not self.is_paused:
                 diff_time = curr_check - last_check
-                self.threshold+=diff_time
+                self.threshold += diff_time
             last_check = curr_check
-    
+
     def get_last_time_activity(self):
         if self.isPlaying():
             return time.time()

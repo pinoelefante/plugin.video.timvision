@@ -5,9 +5,9 @@ from urlparse import urlparse, parse_qs
 from resources.lib.TimVisionAPI import TimVisionSession
 from resources.lib.TimVisionHttpSubRessourceHandler import TimVisionHttpSubRessourceHandler
 
-timvision_session = TimVisionSession()
-methods = [x for x, y in TimVisionHttpSubRessourceHandler.__dict__.items() if type(y) == FunctionType]
-sub_res_handler = TimVisionHttpSubRessourceHandler(timvision_session=timvision_session)
+TIMVISION = TimVisionSession()
+METHODS = [x for x, y in TimVisionHttpSubRessourceHandler.__dict__.items() if isinstance(y, FunctionType)]
+SUB_HANDLER = TimVisionHttpSubRessourceHandler(timvision_session=TIMVISION)
 
 class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """ Represents the callable internal server that dispatches requests to TimVision"""
@@ -24,12 +24,12 @@ class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return
 
         # no existing method given
-        if method not in methods:
-            self.send_error(404, 'Method ' + str(method) + ' not found. Available methods: ' + str(methods))
+        if method not in METHODS:
+            self.send_error(404, 'Method ' + str(method) + ' not found. Available methods: ' + str(METHODS))
             return
         # call method & get the result
-        getattr(sub_res_handler, "time_log")()
-        result = getattr(sub_res_handler, method)(params)
+        getattr(SUB_HANDLER, "time_log")()
+        result = getattr(SUB_HANDLER, method)(params)
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
@@ -40,26 +40,26 @@ class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         url = urlparse(self.path)
         params = parse_qs(url.query)
         method = params.get("action")[0]
-        
+
         # not method given
         if method is None:
             self.send_error(500, 'No method declared')
             return
 
         # no existing method given
-        if method not in methods:
-            self.send_error(404, 'Method ' + str(method) + ' not found. Available methods: ' + str(methods))
+        if method not in METHODS:
+            self.send_error(404, 'Method ' + str(method) + ' not found. Available methods: ' + str(METHODS))
             return
-        
+
         rawdata = self.rfile.read(int(self.headers.getheader('Content-Length')))
         # call method & get the result
-        getattr(sub_res_handler, "time_log")()
-        result = getattr(sub_res_handler, method)(params,rawdata)
-        
-        self.send_response(200 if result!=None else 500)
+        getattr(SUB_HANDLER, "time_log")()
+        result = getattr(SUB_HANDLER, method)(params, rawdata)
+
+        self.send_response(200 if result != None else 500)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
-        self.wfile.write(result if result!=None else "")
+        self.wfile.write(result if result != None else "")
         return
 
     def log_message(self, format, *args):

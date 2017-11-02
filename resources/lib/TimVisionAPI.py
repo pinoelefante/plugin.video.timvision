@@ -1,10 +1,8 @@
-import json
 import threading
 import time
 import urllib
-from resources.lib import Logger, utils, TimVisionObjects
-from requests import session, cookies
-from resources.lib.MyPlayer import MyPlayer
+from resources.lib import Logger, utils, TimVisionObjects, MyPlayer
+from requests import session
 
 AREA_FREE = "SVOD"
 AREA_PAY = "TVOD"
@@ -30,9 +28,11 @@ class TimVisionSession(object):
     player = None
     last_time_request_received = 0
     favourites = None
+    avs_cookie = None
+    stop_check_session = None
 
     def __init__(self):
-        self.player = MyPlayer()
+        self.player = MyPlayer.MyPlayer()
         self.api_endpoint.headers.update({
             'User-Agent': utils.get_user_agent(),
             'Accept-Encoding': 'gzip, deflate',
@@ -49,16 +49,16 @@ class TimVisionSession(object):
         return self.load_app_version() and self.load_app_settings()
 
     def load_app_version(self):
-        r = self.api_endpoint.get("https://www.timvision.it/app_ver.js")
-        if r.status_code == 200:
-            version = r.text.rsplit('"')[1].rsplit('"')[0]
+        response = self.api_endpoint.get("https://www.timvision.it/app_ver.js")
+        if response.status_code == 200:
+            version = response.text.rsplit('"')[1].rsplit('"')[0]
             self.app_version = version
             return True
         return False
 
     def load_app_settings(self):
         url = "/PROPERTIES?deviceType={deviceType}&serviceName={serviceName}"
-        data = self.send_request(url,baseUrl=self.BASE_URL_TIM)
+        data = self.send_request(url, base_url=self.BASE_URL_TIM)
         if data != None:
             self.user_http_header = data['resultObj']['USER_REQ_HEADER_NAME']
             self.widevine_proxy_url = data['resultObj']['WV_PROXY_URL']
@@ -72,10 +72,10 @@ class TimVisionSession(object):
             'customData': '{"customData":[{"name":"deviceType","value":' + DEVICE_TYPE + '},{"name":"deviceVendor","value":""},{"name":"accountDeviceModel","value":""},{"name":"FirmwareVersion","value":""},{"name":"Loader","value":""},{"name":"ResidentApp","value":""},{"name":"DeviceLanguage","value":"it"},{"name":"NetworkType","value":""},{"name":"DisplayDimension","value":""},{"name":"OSversion","value":"Windows 10"},{"name":"AppVersion","value":""},{"name":"DeviceRooted","value":""},{"name":"NetworkOperatoreName","value":""},{"name":"ServiceOperatorName","value":""},{"name":"Custom1","value":"Firefox"},{"name":"Custom2","value":54},{"name":"Custom3","value":"1920x1080"},{"name":"Custom4","value":"PC"},{"name":"Custom5","value":""},{"name":"Custom6","value":""},{"name":"Custom7","value":""},{"name":"Custom8","value":""},{"name":"Custom9","value":""}]}'
         }
         url = "/besc?action=Login&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}"
-        r = self.send_request(url=url, baseUrl=self.BASE_URL_AVS, method="POST", data=data)
-        if r != None:
-            self.api_endpoint.headers.__setitem__(self.user_http_header, r["resultObj"])
-            self.session_login_hash = r["extObject"]["hash"]
+        response = self.send_request(url=url, base_url=self.BASE_URL_AVS, method="POST", data=data)
+        if response != None:
+            self.api_endpoint.headers.__setitem__(self.user_http_header, response["resultObj"])
+            self.session_login_hash = response["extObject"]["hash"]
             self.avs_cookie = self.api_endpoint.cookies.get("avs_cookie")
             self.license_endpoint.headers.__setitem__('AVS_COOKIE', self.avs_cookie)
             self.stop_check_session = threading.Event()
@@ -100,7 +100,7 @@ class TimVisionSession(object):
         self.api_endpoint.cookies.clear()
         self.session_login_hash = None
         self.api_endpoint.headers.pop(self.user_http_header, None)
-        if self.stop_check_session!=None:
+        if self.stop_check_session != None:
             self.stop_check_session.set()
         return True
     def is_logged(self):
@@ -111,43 +111,43 @@ class TimVisionSession(object):
     def __compile_url(self, url):
         return url.replace("{appVersion}", self.app_version).replace("{channel}", SERVICE_CHANNEL).replace("{serviceName}", SERVICE_NAME).replace("{deviceType}", DEVICE_TYPE).replace("{providerName}", PROVIDER_NAME)
 
-    def send_request(self, url, baseUrl, method="GET", data={}):
+    def send_request(self, url, base_url, method="GET", data={}):
         if not url.startswith("https://"):
-            url = utils.url_join(baseUrl, url)
+            url = utils.url_join(base_url, url)
         url = self.__compile_url(url)
-        
+
         Logger.log_on_desktop_file("Sending "+method+" request to "+url)
-        r = self.api_endpoint.get(url, params=data) if method == "GET" else self.api_endpoint.post(url, data=data)
-        Logger.log_on_desktop_file("Status Code: "+str(r.status_code))
-        if r.status_code == 200:
-            data = r.json()
-            Logger.log_on_desktop_file(msg=("Response: "+r.text))
+        response = self.api_endpoint.get(url, params=data) if method == "GET" else self.api_endpoint.post(url, data=data)
+        Logger.log_on_desktop_file("Status Code: "+str(response.status_code))
+        if response.status_code == 200:
+            data = response.json()
+            Logger.log_on_desktop_file(msg=("Response: "+response.text))
             if isinstance(data, list):
                 Logger.log_on_desktop_file("JSON result is an array")
                 data = data[0]
             if data["resultCode"] == "OK":
                 return data
         return None
-    
+
     def get_show_content(self, content_id, content_type):
         url = "/DETAILS?contentId="+str(content_id)+"&type="+content_type+"&renderEngine=DELTA&deviceType={deviceType}&serviceName={serviceName}"
         response = self.get_contents(url)
         if response != None:
             content = []
-            for s in response:
-                if s["layout"]=="SEASON":
+            for container in response:
+                if container["layout"] == "SEASON":
                     if content_type == TVSHOW_CONTENT_TYPE_SEASONS:
-                        content.append(s)
+                        content.append(container)
                     elif content_type == TVSHOW_CONTENT_TYPE_EPISODES:
-                        content = [item for item in s["items"] if item["layout"] == "EPISODE"]
+                        content = [item for item in container["items"] if item["layout"] == "EPISODE"]
             return content
         return None
-    
+
     def check_session(self):
         url = "/besc?action=CheckSession&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}"
         while not self.stop_check_session.is_set():
-            r = self.send_request(url=url, baseUrl=self.BASE_URL_AVS)
-            if self.is_user_inactive() or (r != None and r["resultObj"]["sessionFlag"] == "N"):
+            response = self.send_request(url=url, base_url=self.BASE_URL_AVS)
+            if self.is_user_inactive() or (response != None and response["resultObj"]["sessionFlag"] == "N"):
                 self.logout()
             self.stop_check_session.wait(600)
 
@@ -156,14 +156,14 @@ class TimVisionSession(object):
         if time.time() - last_activity > 3600: #1 ora = 3600
             return True
         return False
-    
-    def get_license_info(self, content_id, videoType, has_hd=False):
-        cp_id,mpd = self.get_mpd_file(content_id, videoType)
+
+    def get_license_info(self, content_id, video_type, has_hd=False):
+        cp_id, mpd = self.get_mpd_file(content_id, video_type)
         if cp_id != None:
-            assetIdWd = self.get_assetIdWd(mpd)
+            asset_id_wd = TimVisionSession.get_asset_id_wd(mpd)
             if has_hd and utils.get_setting("prefer_hd"):
-                mpd=mpd.replace("_SD.mpd", "_HD.mpd")
-            wv_url = self.widevine_proxy_url.replace("{ContentIdAVS}", content_id).replace("{AssetIdWD}", assetIdWd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", SERVICE_CHANNEL).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
+                mpd = mpd.replace("_SD.mpd", "_HD.mpd")
+            wv_url = self.widevine_proxy_url.replace("{ContentIdAVS}", content_id).replace("{AssetIdWD}", asset_id_wd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", SERVICE_CHANNEL).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
             if utils.get_setting("inputstream_kodi17"):
                 wv_url = utils.url_join(utils.get_service_url(), "?action=get_license&license_url=%s" % (urllib.quote(wv_url)))
             return {
@@ -173,30 +173,30 @@ class TimVisionSession(object):
             }
         return None
 
-    def get_assetIdWd(self, mpdUrl):
-        partial = mpdUrl[mpdUrl.find("DASH") + 5:]
+    @staticmethod
+    def get_asset_id_wd(mpd_url):
+        partial = mpd_url[mpd_url.find("DASH") + 5:]
         partial = partial[0:partial.find("/")]
         return partial
 
-    def get_mpd_file(self, content_id, videoType):
-        url = "/PLAY?contentId="+content_id+"&deviceType=CHROME&serviceName={serviceName}&type="+videoType
-        data = self.send_request(url, baseUrl=self.BASE_URL_TIM)
+    def get_mpd_file(self, content_id, video_type):
+        url = "/PLAY?contentId="+content_id+"&deviceType=CHROME&serviceName={serviceName}&type="+video_type
+        data = self.send_request(url, base_url=self.BASE_URL_TIM)
         if data != None:
-            cpId = data["resultObj"]["cp_id"]
+            cp_id = data["resultObj"]["cp_id"]
             mpd = data["resultObj"]["src"]
-            return cpId, mpd
-        return None,None
+            return cp_id, mpd
+        return None, None
 
     def load_all_contents(self, category, begin=0, progress=49):
         end = int(begin) + progress
         url = "/TRAY/SEARCH/VOD?from="+str(begin)+"&to="+str(end)+"&sorting=order:title+asc&categoryName="+category+"&offerType=SVOD&deviceType={deviceType}&serviceName={serviceName}"
-        data = self.send_request(url, baseUrl=self.BASE_URL_TIM)
+        data = self.send_request(url, base_url=self.BASE_URL_TIM)
         if data != None:
-            maxCount = data["resultObj"]["total"]
+            max_count = data["resultObj"]["total"]
             movies = data["resultObj"]["containers"]
-            if end <= maxCount:
-                other_movie = self.load_all_contents(
-                    begin=end, category=category)
+            if end <= max_count:
+                other_movie = self.load_all_contents(begin=end, category=category)
                 if other_movie != None:
                     movies.extend(other_movie)
             return movies
@@ -211,20 +211,20 @@ class TimVisionSession(object):
         return self.get_contents(url)
 
     def get_contents(self, url, data={}):
-        data = self.send_request(url, baseUrl=self.BASE_URL_TIM, data=data)
+        data = self.send_request(url, base_url=self.BASE_URL_TIM, data=data)
         if data != None:
             return data["resultObj"]["containers"]
         return None
-        
-    def getCast(self, content_id):
+
+    def get_cast(self, content_id):
         url = "/TRAY/CELEBRITIES?maxResults=50&deviceType={deviceType}&serviceName={serviceName}&contentId="+content_id
         return self.get_contents(url)
 
-    def setFavorite(self, content_id, favorite, mediatype):
-        f = "Y" if favorite else "N"
-        url = "/besc?action=SetFavorite&isFavorite="+f+"&contentId="+content_id+"&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}"
-        r = self.send_request(url, self.BASE_URL_AVS)
-        if r!=None and r["resultCode"]=="OK":
+    def set_favorite(self, content_id, favorite, mediatype):
+        choise = "Y" if favorite else "N"
+        url = "/besc?action=SetFavorite&isFavorite="+choise+"&contentId="+content_id+"&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}"
+        response = self.send_request(url, self.BASE_URL_AVS)
+        if response != None and response["resultCode"] == "OK":
             if favorite:
                 res_detail = self.get_details(content_id)
                 if res_detail is None:
@@ -242,7 +242,7 @@ class TimVisionSession(object):
         response = self.get_contents(url)
         if response is None:
             return None
-        detail = [x for x in response if x["layout"]=="CONTENT_DETAILS"][0]
+        detail = [x for x in response if x["layout"] == "CONTENT_DETAILS" or x["layout"] == "SERIES_DETAILS"][0]
         return detail
 
     def get_favourites(self):
@@ -262,66 +262,60 @@ class TimVisionSession(object):
                 return True
         return False
 
-    def get_season_trailer(self, season_id, contentType="SEASON"):
+    def get_season_trailer(self, season_id):
         url = "/GETCDNFORSERIES?type=TRAILER&contentId="+season_id+"&contentType=SEASON&deviceType=CHROME&serviceName={serviceName}"
-        r = self.send_request(url, self.BASE_URL_TIM)
-        if r != None:
-            return r["resultObj"]["src"]
+        response = self.send_request(url, self.BASE_URL_TIM)
+        if response != None:
+            return response["resultObj"]["src"]
         return None
 
-    def get_movie_trailer(self, contentId):
-        cp_id, mpd = self.get_mpd_file(contentId, "MOVIE")
-        if cp_id == None:
+    def get_movie_trailer(self, content_id):
+        cp_id, _mpd = self.get_mpd_file(content_id, "MOVIE")
+        if cp_id is None:
             return None
         url = "/besc?action=GetCDN&channel={channel}&type=TRAILER&asJson=Y&serviceName={serviceName}&providerName={providerName}&deviceType=CHROME&cp_id="+cp_id
-        r = self.send_request(url, self.BASE_URL_AVS)
-        if r != None:
-            return r["resultObj"]["src"]
-        return None
-    
-    def search(self, keyword, area = AREA_FREE):
-        url = "/TRAY/SEARCHRECOM?keyword="+keyword+"&from=0&to=100&area="+area+"&category=ALL&deviceType={deviceType}&serviceName={serviceName}"
-        r = self.send_request(url, self.BASE_URL_TIM)
-        if r!=None:
-            return r["resultObj"]["containers"][0]["items"] if r["resultObj"]["total"] > 0 else {}
+        response = self.send_request(url, self.BASE_URL_AVS)
+        if response != None:
+            return response["resultObj"]["src"]
         return None
 
-    def get_widevine_response(self, widevineRequest, widevine_url):
-        for count in range(0,3):
+    def search(self, keyword, area=AREA_FREE):
+        url = "/TRAY/SEARCHRECOM?keyword="+keyword+"&from=0&to=100&area="+area+"&category=ALL&deviceType={deviceType}&serviceName={serviceName}"
+        response = self.send_request(url, self.BASE_URL_TIM)
+        if response != None:
+            return response["resultObj"]["containers"][0]["items"] if response["resultObj"]["total"] > 0 else {}
+        return None
+
+    def get_widevine_response(self, widevine_request, widevine_url):
+        for _ in range(0, 3):
             Logger.log_on_desktop_file("Trying to get widevine license", filename=Logger.LOG_WIDEVINE_FILE)
-            resp = self.license_endpoint.post(widevine_url, data=widevineRequest)
+            resp = self.license_endpoint.post(widevine_url, data=widevine_request)
             Logger.log_on_desktop_file("Status code: "+str(resp.status_code), filename=Logger.LOG_WIDEVINE_FILE)
             if resp.status_code == 200:
                 Logger.log_on_desktop_file("We get it! WOW", filename=Logger.LOG_WIDEVINE_FILE)
                 return resp.content
         return None
 
-    def set_playing_media(self, url, contentId, start_time, content_type, duration):
-        self.player.setItem(url, contentId, start_time, content_type, duration)
+    def set_playing_media(self, url, content_id, start_time, content_type, duration):
+        self.player.setItem(url, content_id, start_time, content_type, duration)
 
-    def keep_alive(self, contentId):
-        url = "/besc?action=KeepAlive&channel={channel}&type={deviceType}&noRefresh=Y&providerName={providerName}&serviceName={serviceName}&contentId="+str(contentId)
-        r = self.send_request(url, self.BASE_URL_AVS)
-        if r!=None:
-            return True
-        return False
+    def keep_alive(self, content_id):
+        url = "/besc?action=KeepAlive&channel={channel}&type={deviceType}&noRefresh=Y&providerName={providerName}&serviceName={serviceName}&contentId="+str(content_id)
+        response = self.send_request(url, self.BASE_URL_AVS)
+        return response != None
 
-    def set_seen(self, contentId, duration):
-        return self.stop_content(contentId, duration, duration)
+    def set_seen(self, content_id, duration):
+        return self.stop_content(content_id, duration, duration)
 
-    def pause_consumption(self, contentId, time, threshold):
-        url = "/besc?action=PauseConsumption&channel={channel}&providerName={providerName}&serviceName={serviceName}&bookmark="+str(time)+"&deltaThreshold="+str(threshold)
-        r = self.send_request(url, self.BASE_URL_AVS)
-        if r != None:
-            return True
-        return False
+    def pause_consumption(self, _content_id, pause_time, threshold):
+        url = "/besc?action=PauseConsumption&channel={channel}&providerName={providerName}&serviceName={serviceName}&bookmark="+str(pause_time)+"&deltaThreshold="+str(threshold)
+        response = self.send_request(url, self.BASE_URL_AVS)
+        return response != None
 
-    def stop_content(self, contentId, time, threshold):
-        url = "/besc?action=StopContent&channel={channel}&providerName={providerName}&serviceName={serviceName}&type=VOD&contentId="+str(contentId)+"&bookmark="+str(time)+"&deltaThreshold="+str(threshold)+"&section=CATALOGUE"
-        r = self.send_request(url, self.BASE_URL_AVS)
-        if r!=None:
-            return True
-        return False
+    def stop_content(self, content_id, stop_time, threshold):
+        url = "/besc?action=StopContent&channel={channel}&providerName={providerName}&serviceName={serviceName}&type=VOD&contentId="+str(content_id)+"&bookmark="+str(stop_time)+"&deltaThreshold="+str(threshold)+"&section=CATALOGUE"
+        response = self.send_request(url, self.BASE_URL_AVS)
+        return response != None
 
     def get_recommended_by_content_id(self, content_id):
         url = "/TRAY/RECOM?deviceType={deviceType}&serviceName={serviceName}&dataSet=RICH&recomType=MORE_LIKE_THIS&contentId="+content_id+"&maxResults=25"

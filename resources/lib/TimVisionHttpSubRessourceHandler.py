@@ -28,10 +28,10 @@ class TimVisionHttpSubRessourceHandler(object):
         if email != '' and password != '':
             return self.timvision_session.login(email, password)
         return None
-    
+
     def logout(self, params):
         return self.timvision_session.logout()
-    
+
     def get_show_content(self, params):
         content_id = params.get("contentId")[0]
         content_type = params.get("contentType")[0]
@@ -41,13 +41,13 @@ class TimVisionHttpSubRessourceHandler(object):
         content_id = params.get("contentId")[0]
         video_type = params.get("videoType")[0]
         has_hd = utils.get_bool(params.get("has_hd", ["false"])[0])
-        return self.timvision_session.get_license_info(content_id, video_type,has_hd)
+        return self.timvision_session.get_license_info(content_id, video_type, has_hd)
 
     def load_all_contents(self, params):
         begin = int(params.get("begin", [0])[0])
         category = params.get("category")[0]
         return self.timvision_session.load_all_contents(begin=begin, category=category)
-    
+
     def get_categories(self, params={}):
         return self.timvision_session.get_menu_categories()
 
@@ -71,33 +71,33 @@ class TimVisionHttpSubRessourceHandler(object):
         content_id = params.get("contentId")[0]
         return self.timvision_session.get_movie_trailer(content_id)
 
-    def get_license(self,params,rawdata): #rawdata is widevine payload
+    def get_license(self, params, rawdata): #rawdata is widevine payload
         url = urllib.unquote(params.get("license_url")[0])
-        return self.timvision_session.get_widevine_response(rawdata,url)
-    
+        return self.timvision_session.get_widevine_response(rawdata, url)
+
     def search(self, params):
-        keyword = params.get("keyword",[""])[0]
+        keyword = params.get("keyword", [""])[0]
         return self.timvision_session.search(keyword)
 
     def set_playing_item(self, params):
-        url = params.get("url",[""])[0]
-        content_id = params.get("contentId",[""])[0]
-        start_time = float(params.get("time",["0.0"])[0])
+        url = params.get("url", [""])[0]
+        content_id = params.get("contentId", [""])[0]
+        start_time = float(params.get("time", ["0.0"])[0])
         content_type = params.get("videoType")[0]
         duration = params.get("duration")[0]
         return self.timvision_session.set_playing_media(url, content_id, start_time, content_type, duration)
 
     def stop_content(self, params):
         content_id = params.get("contentId")[0]
-        time = params.get("time", ["0"])[0]
+        stop_time = params.get("time", ["0"])[0]
         threshold = params.get("threshold")[0]
-        return self.timvision_session.stop_content(content_id, time, threshold)
+        return self.timvision_session.stop_content(content_id, stop_time, threshold)
 
     def pause_content(self, params):
         content_id = params.get("contentId")[0]
-        time = params.get("time", ["0"])[0]
+        pause_time = params.get("time", ["0"])[0]
         threshold = params.get("threshold")[0]
-        return self.timvision_session.pause_consumption(content_id, time, threshold)
+        return self.timvision_session.pause_consumption(content_id, pause_time, threshold)
 
     def set_content_seen(self, params):
         content_id = params.get("contentId")[0]
@@ -112,8 +112,12 @@ class TimVisionHttpSubRessourceHandler(object):
         content_id = params.get("contentId")[0]
         value = utils.get_bool(params.get("value")[0])
         mediatype = params.get("mediatype")[0]
-        return self.timvision_session.setFavorite(content_id, value, mediatype)
+        return self.timvision_session.set_favorite(content_id, value, mediatype)
 
     def is_favourite(self, params):
         content_id = params.get("contentId")[0]
         return self.timvision_session.is_favourite(content_id)
+
+    def get_details(self, params):
+        content_id = params.get("contentId")[0]
+        return self.timvision_session.get_details(content_id)

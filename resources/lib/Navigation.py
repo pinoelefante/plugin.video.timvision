@@ -21,13 +21,13 @@ class Navigation(object):
                 page = params.get("page")
                 category_id = params.get("category_id")
                 if page in ["HOME", "INTRATTENIMENTO"]:
-                    self.create_category_page(pageId=category_id)
+                    self.create_category_page(page_id=category_id)
                 elif page == "CINEMA":
-                    self.create_category_page(pageId=category_id, ha_elenco=True, category_name='Cinema')
+                    self.create_category_page(page_id=category_id, ha_elenco=True, category_name='Cinema')
                 elif page == "SERIE TV":
-                    self.create_category_page(pageId=category_id, ha_elenco=True,  category_name='Serie')
+                    self.create_category_page(page_id=category_id, ha_elenco=True, category_name='Serie')
                 elif page == "BAMBINI":
-                    self.create_category_page(pageId=category_id, ha_elenco=True,  category_name='Kids')
+                    self.create_category_page(page_id=category_id, ha_elenco=True, category_name='Kids')
 
             if params.has_key("action"):
                 action = params.get("action")
@@ -37,7 +37,7 @@ class Navigation(object):
                     self.add_items_to_folder(items)
                 elif action == "apri_serie":
                     id_serie = params.get("id_serie")
-                    nome_serie = urllib.unquote(params.get("serieNome",""))
+                    nome_serie = urllib.unquote(params.get("serieNome", ""))
                     items = utils.call_service("get_show_content", {"contentId": id_serie, "contentType": TimVisionAPI.TVSHOW_CONTENT_TYPE_SEASONS})
                     if len(items) == 1 and utils.get_setting("unique_season"):
                         items = TimVisionObjects.parse_collection(items)
@@ -47,7 +47,7 @@ class Navigation(object):
                     id_stagione = params.get("id_stagione")
                     items = utils.call_service("get_show_content", {"contentId": id_stagione, "contentType":TimVisionAPI.TVSHOW_CONTENT_TYPE_EPISODES})
                     season_no = params.get("seasonNo")
-                    self.add_items_to_folder(items=items, is_episodes=True, title = "Stagione %s" % (season_no))
+                    self.add_items_to_folder(items=items, is_episodes=True, title="Stagione %s" % (season_no))
                 elif action == "play_item":
                     content_id = params.get("contentId")
                     video_type = params.get("videoType")
@@ -56,9 +56,9 @@ class Navigation(object):
                     duration = params.get("duration")
                     self.play_video(content_id, video_type, has_hd, start_offset, duration)
                 elif action == "open_page":
-                    uri = urllib.unquote_plus(params.get("uri")).replace("maxResults=30","maxResults=50").replace("&addSeeMore=50","")
+                    uri = urllib.unquote_plus(params.get("uri")).replace("maxResults=30", "maxResults=50").replace("&addSeeMore=50", "")
                     items = utils.call_service("get_contents", {"url": uri})
-                    items = [x for x in items if x["layout"]!="SEE_MORE"]
+                    items = [x for x in items if x["layout"] != "SEE_MORE"]
                     self.add_items_to_folder(items)
                 elif action == "logout":
                     utils.call_service("logout")
@@ -92,7 +92,7 @@ class Navigation(object):
                 logged = utils.call_service("login", {"username":email, "password":password})
             if not logged:
                 if count == 0:
-                    utils.set_setting("username",Dialogs.get_text_input("Email"))
+                    utils.set_setting("username", Dialogs.get_text_input("Email"))
                     utils.set_setting("password", Dialogs.get_password_input())
                     return self.verifica_login(count+1)
         return logged
@@ -110,20 +110,20 @@ class Navigation(object):
             uri = cat["actions"][0]["uri"]
             page_id = uri[6:uri.find("?")]
             xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=utils.url_join(self.plugin_dir, "?page=%s&category_id=%s" % (label, page_id)), isFolder=True, listitem=list_item)
-        
+
         list_item = xbmcgui.ListItem(label="Cerca...")
-        xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=utils.url_join(self.plugin_dir,"?action=search"), isFolder=True,listitem=list_item)
+        xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=utils.url_join(self.plugin_dir, "?action=search"), isFolder=True, listitem=list_item)
 
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
 
-    def create_category_page(self, pageId, ha_elenco=False, category_name=''):
+    def create_category_page(self, page_id, ha_elenco=False, category_name=''):
         if ha_elenco:
             list_item = xbmcgui.ListItem(label='Elenco completo')
-            xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=utils.url_join(self.plugin_dir,"?action=full_list&category=%s" % (category_name)), listitem=list_item, isFolder=True)
+            xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=utils.url_join(self.plugin_dir, "?action=full_list&category=%s" % (category_name)), listitem=list_item, isFolder=True)
 
-        pages = utils.call_service("get_page", {"page": str(pageId)})
+        pages = utils.call_service("get_page", {"page": str(page_id)})
         if pages != None:
-            pages = [page for page in pages if page["layout"] in ["SMALL_CARDS","KIDS_COLLECTIONS"]]
+            pages = [page for page in pages if page["layout"] in ["SMALL_CARDS", "KIDS_COLLECTIONS"]]
             for page in pages:
                 if page["metadata"]["label"] == "TUTTI I TITOLI":
                     continue
@@ -134,7 +134,7 @@ class Navigation(object):
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
         return
 
-    def add_items_to_folder(self, items, is_episodes = False, title = ''):
+    def add_items_to_folder(self, items, is_episodes=False, title=''):
         if len(items) == 0:
             Dialogs.show_dialog("Non sono presenti contenuti? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Elenco vuoto")
             return False
@@ -142,7 +142,7 @@ class Navigation(object):
         for item in items:
             list_item, is_folder, url = item.get_list_item()
             xbmcplugin.addDirectoryItem(handle=self.plugin_handle, isFolder=is_folder, listitem=list_item, url=utils.url_join(self.plugin_dir, url))
-        
+
         if is_episodes:
             xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_EPISODE)
         else:
@@ -167,17 +167,18 @@ class Navigation(object):
         else:
             Dialogs.show_message("Il contenuto non ha un trailer", "Trailer assente")
 
-    def play_video(self, content_id, video_type, has_hd=False, start_offset = 0.0, duration=0):
+    def play_video(self, content_id, video_type, has_hd=False, start_offset=0.0, duration=0):
         license_info = utils.call_service("get_license_video", {"contentId": content_id, "videoType": video_type, "has_hd":has_hd})
         if license_info is None:
+            #TODO try get ism manifest
             Dialogs.show_dialog("Si e' verificato un errore o non e' possibile vedere il contenuto su questo dispositivo")
             return
-        self.play(content_id, license_info["mpd_file"],license_info["widevine_url"],"AVS_COOKIE="+license_info["avs_cookie"], start_offset, video_type, duration)
-              
-    def play(self, content_id=None, url=None, license_key=None, license_headers="", start_offset = 0.0, content_type='', duration=0):
+        self.play(content_id, license_info["mpd_file"], license_info["widevine_url"], "AVS_COOKIE="+license_info["avs_cookie"], start_offset, video_type, duration)
+
+    def play(self, content_id=None, url=None, license_key=None, license_headers="", start_offset=0.0, content_type='', duration=0):
         inputstream, is_enabled = utils.get_addon('inputstream.adaptive')
 
-        if inputstream == None:
+        if inputstream is None:
             Logger.kodi_log("inputstream.adaptive not found")
             Dialogs.show_dialog("L'addon inputstream.adaptive non e' installato o e' disabilitato", "Addon non trovato")
             return
@@ -190,16 +191,16 @@ class Navigation(object):
         play_item = xbmcgui.ListItem(path=url)
         play_item.setContentLookup(False)
         play_item.setMimeType('application/dash+xml')
-        play_item.setProperty(inputstream + '.stream_headers',user_agent)
+        play_item.setProperty(inputstream + '.stream_headers', user_agent)
         play_item.setProperty(inputstream + '.manifest_type', 'mpd')
         play_item.setProperty('inputstreamaddon', "inputstream.adaptive")
 
-        if license_key!=None:
+        if license_key != None:
             play_item.setProperty(inputstream + '.license_type', 'com.widevine.alpha')
             play_item.setProperty(inputstream + '.license_key', license_key+'|'+user_agent+'&'+license_headers+'|R{SSM}|')
             if not utils.get_setting("always_resume") and float(start_offset) > 10:
                 message = "Vuoi riprendere la visione da %s?" % (utils.get_timestring_from_seconds(float(start_offset)))
-                start_offeset = start_offset if Dialogs.ask(message, "Riprendi visione") else 0.0
+                start_offset = start_offset if Dialogs.ask(message, "Riprendi visione") else 0.0
             utils.call_service("set_playing_item", {"url":url, "contentId":content_id, "time":start_offset, "videoType":content_type, "duration":duration})
             xbmcplugin.setResolvedUrl(handle=self.plugin_handle, succeeded=True, listitem=play_item)
         else:

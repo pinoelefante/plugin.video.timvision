@@ -12,14 +12,14 @@ ITEM_COLLECTION = "COLLECTION"
 
 def parse_collection(collection):
     content = []
-    for c in collection:
-        item_type = get_item_type(c["layout"])
+    for container in collection:
+        item_type = get_item_type(container["layout"])
         if item_type in [ITEM_TVSHOW, ITEM_EPISODE, ITEM_MOVIE]:
-            content.append(parse_content(c, item_type))
+            content.append(parse_content(container, item_type))
         elif item_type == ITEM_SEASON:
-            content.append(parse_season(c))
+            content.append(parse_season(container))
         elif item_type == ITEM_COLLECTION:
-            content.append(parse_item_collection(c))
+            content.append(parse_item_collection(container))
     return content
 
 def get_item_type(value):
@@ -31,8 +31,8 @@ def get_item_type(value):
         return ITEM_MOVIE
     elif value == "SEASON":
         return ITEM_SEASON
-    else: #["COLLECTION_ITEM", "EDITORIAL_ITEM", "KIDS_ITEM"]
-        return ITEM_COLLECTION
+    #["COLLECTION_ITEM", "EDITORIAL_ITEM", "KIDS_ITEM"]
+    return ITEM_COLLECTION
 
 def parse_item_collection(container):
     title = container["metadata"]["title"]
@@ -100,7 +100,7 @@ class TimVisionBaseObject(object):
 
     def get_list_item(self):
         list_item = xbmcgui.ListItem(label=self.title)
-        list_item.setArt({ "fanart": self.fanart, "poster": self.poster })
+        list_item.setArt({"fanart": self.fanart, "poster": self.poster})
         is_folder = False
         url = ""
         return list_item, is_folder, url
@@ -135,8 +135,8 @@ class TimVisionContent(TimVisionBaseObject):
             url = "?action=open_page&uri=" + urllib.quote_plus(self.content_id)
         elif self.mediatype in [ITEM_MOVIE, ITEM_EPISODE]:
             url = "?action=play_item&contentId=%s&videoType=%s&has_hd=%s&startPoint=%s&contentType=%s&duration=%s" % (str(self.content_id), self.mediatype, str(self.is_hd_available), str(self.bookmark), self.mediatype, str(self.duration))
-            list_item.setProperty("isPlayable","true")
-            list_item.addStreamInfo("video",{'width': '768', 'height': '432'} if not self.is_hd_available else {'width': '1920', 'height': '1080'})
+            list_item.setProperty("isPlayable", "true")
+            list_item.addStreamInfo("video", {'width': '768', 'height': '432'} if not self.is_hd_available else {'width': '1920', 'height': '1080'})
 
         list_item.setInfo("video", {
             "year": str(self.year),
@@ -157,7 +157,7 @@ class TimVisionContent(TimVisionBaseObject):
             })
         list_item = self.create_context_menu(list_item)
         return list_item, is_folder, url
-    
+
     def create_context_menu(self, list_item):
         actions = []
         is_fav = utils.call_service("is_favourite", {"contentId":self.content_id})
@@ -165,17 +165,18 @@ class TimVisionContent(TimVisionBaseObject):
             actions.extend([("Play Trailer", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=play_trailer&contentId="+self.content_id+"&type=MOVIE)")])
             #actions.extend([("Gia' Visto", "RunPlugin("+self.plugin_dir+"?action=set_seen&contentId="+content_id+"&duration="+str(container["metadata"]["duration"])+")")])
             if is_fav:
-                actions.extend([("Rimuovi da preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=False&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype) )])
+                actions.extend([("Rimuovi da preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=False&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype))])
             else:
-                actions.extend([("Aggiungi a preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=True&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype) )])
+                actions.extend([("Aggiungi a preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=True&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype))])
         elif self.mediatype == ITEM_EPISODE:
             actions.extend([("Play Trailer della Stagione", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=play_trailer&contentId="+self.content_id+"&type=TVSHOW)")])
-            #actions.extend([("Gia' Visto", "RunPlugin("+self.plugin_dir+"?action=set_seen&contentId="+content_id+"&duration="+str(container["metadata"]["duration"])+")")])
+            #actions.extend([("Gia' Visto", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=play_item&contentId="+self.content_id+"&duration="+str(self.duration)+"&video_type=VOD&has_hd=False&startPoint="+str(int(self.duration)-1)+")")])
         elif  self.mediatype == ITEM_TVSHOW:
-            if is_fav:
-                actions.extend([("Rimuovi da preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=False&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype) )])
-            else:
-                actions.extend([("Aggiungi a preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=True&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype) )])
+            #if is_fav:
+            #    actions.extend([("Rimuovi da preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=False&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype))])
+            #else:
+            #    actions.extend([("Aggiungi a preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=True&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype))])
+            pass
         elif  self.mediatype == ITEM_SEASON:
             actions.extend([("Play Trailer", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=play_trailer&contentId="+self.content_id+"&type=TVSHOW)")])
         list_item.addContextMenuItems(items=actions)
