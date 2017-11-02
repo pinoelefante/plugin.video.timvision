@@ -2,7 +2,7 @@ import json
 import threading
 import time
 import urllib
-from resources.lib import Logger, utils
+from resources.lib import Logger, utils, TimVisionObjects
 from requests import session, cookies
 from resources.lib.MyPlayer import MyPlayer
 
@@ -29,6 +29,7 @@ class TimVisionSession(object):
     widevine_proxy_url = "https://license.cubovision.it/WidevineManager/WidevineManager.svc/GetLicense/{ContentIdAVS}/{AssetIdWD}/{CpId}/{Type}/{ClientTime}/{Channel}/{DeviceType}"
     player = None
     last_time_request_received = 0
+    favourites = None
 
     def __init__(self):
         self.player = MyPlayer()
@@ -219,11 +220,47 @@ class TimVisionSession(object):
         url = "/TRAY/CELEBRITIES?maxResults=50&deviceType={deviceType}&serviceName={serviceName}&contentId="+content_id
         return self.get_contents(url)
 
-    def setFavorite(self, contentId, favorite = True):
+    def setFavorite(self, content_id, favorite, mediatype):
         f = "Y" if favorite else "N"
-        url = "/besc?action=SetFavorite&isFavorite="+f+"&contentId="+contentId+"&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}"
+        url = "/besc?action=SetFavorite&isFavorite="+f+"&contentId="+content_id+"&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}"
         r = self.send_request(url, self.BASE_URL_AVS)
-        return r!=None and r["resultCode"]=="OK"
+        if r!=None and r["resultCode"]=="OK":
+            if favorite:
+                res_detail = self.get_details(content_id)
+                if res_detail is None:
+                    self.favourites.append(TimVisionObjects.TimVisionBaseObject(content_id, '!!!TITLE ERROR!!!'))
+                    return True
+                content = TimVisionObjects.parse_content(res_detail, mediatype)
+                self.favourites.append(content)
+            else:
+                self.favourites = [x for x in self.favourites if x.content_id != content_id]
+            return True
+        return False
+
+    def get_details(self, content_id):
+        url = "/DETAILS?contentId=%s&deviceType=WEB&serviceName=CUBOVISION&type=VOD" % (str(content_id))
+        response = self.get_contents(url)
+        if response is None:
+            return None
+        detail = [x for x in response if x["layout"]=="CONTENT_DETAILS"][0]
+        return detail
+
+    def get_favourites(self):
+        #can use from-to instead of maxresults
+        url = "/TRAY/FAVORITES?dataSet=RICH&area=ALL&category=ALL&maxResults=1000&deviceType={deviceType}&serviceName={serviceName}"
+        result = self.get_contents(url)
+        if result != None:
+            self.favourites = TimVisionObjects.parse_collection(result)
+            return True
+        return False
+
+    def is_favourite(self, content_id):
+        if self.favourites is None and not self.get_favourites():
+            return False
+        for item in self.favourites:
+            if item.content_id == content_id:
+                return True
+        return False
 
     def get_season_trailer(self, season_id, contentType="SEASON"):
         url = "/GETCDNFORSERIES?type=TRAILER&contentId="+season_id+"&contentType=SEASON&deviceType=CHROME&serviceName={serviceName}"
@@ -231,7 +268,7 @@ class TimVisionSession(object):
         if r != None:
             return r["resultObj"]["src"]
         return None
-    
+
     def get_movie_trailer(self, contentId):
         cp_id, mpd = self.get_mpd_file(contentId, "MOVIE")
         if cp_id == None:

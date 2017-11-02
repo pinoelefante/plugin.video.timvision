@@ -44,7 +44,7 @@ def parse_item_collection(container):
     return content
 
 def parse_content(item, mediatype):
-    content_id = item["id"] if mediatype == ITEM_MOVIE else item["metadata"]["contentId"]
+    content_id = item["metadata"]["contentId"]
     title = item["metadata"]["title"]
     content = TimVisionContent(content_id, title, mediatype)
 
@@ -160,17 +160,25 @@ class TimVisionContent(TimVisionBaseObject):
     
     def create_context_menu(self, list_item):
         actions = []
+        is_fav = utils.call_service("is_favourite", {"contentId":self.content_id})
         if self.mediatype == ITEM_MOVIE:
             actions.extend([("Play Trailer", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=play_trailer&contentId="+self.content_id+"&type=MOVIE)")])
             #actions.extend([("Gia' Visto", "RunPlugin("+self.plugin_dir+"?action=set_seen&contentId="+content_id+"&duration="+str(container["metadata"]["duration"])+")")])
+            if is_fav:
+                actions.extend([("Rimuovi da preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=False&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype) )])
+            else:
+                actions.extend([("Aggiungi a preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=True&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype) )])
         elif self.mediatype == ITEM_EPISODE:
             actions.extend([("Play Trailer della Stagione", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=play_trailer&contentId="+self.content_id+"&type=TVSHOW)")])
             #actions.extend([("Gia' Visto", "RunPlugin("+self.plugin_dir+"?action=set_seen&contentId="+content_id+"&duration="+str(container["metadata"]["duration"])+")")])
         elif  self.mediatype == ITEM_TVSHOW:
-            pass
+            if is_fav:
+                actions.extend([("Rimuovi da preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=False&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype) )])
+            else:
+                actions.extend([("Aggiungi a preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=True&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype) )])
         elif  self.mediatype == ITEM_SEASON:
             actions.extend([("Play Trailer", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=play_trailer&contentId="+self.content_id+"&type=TVSHOW)")])
-        list_item.addContextMenuItems(actions)
+        list_item.addContextMenuItems(items=actions)
         return list_item
 
     def add_cast_simple(self, cast):

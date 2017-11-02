@@ -107,3 +107,13 @@ class TimVisionHttpSubRessourceHandler(object):
     def keep_alive(self, params):
         content_id = params.get("contentId")[0]
         return self.timvision_session.keep_alive(content_id)
+
+    def set_favourite(self, params):
+        content_id = params.get("contentId")[0]
+        value = utils.get_bool(params.get("value")[0])
+        mediatype = params.get("mediatype")[0]
+        return self.timvision_session.setFavorite(content_id, value, mediatype)
+
+    def is_favourite(self, params):
+        content_id = params.get("contentId")[0]
+        return self.timvision_session.is_favourite(content_id)

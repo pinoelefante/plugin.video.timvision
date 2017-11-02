@@ -70,10 +70,12 @@ class Navigation(object):
                     duration = params.get("duration")
                     utils.call_service("set_content_seen", {"contentId":content_id, "duration":duration})
                     xbmc.executebuiltin("Container.Refresh()")
-                elif action == "add_favourite":
-                    pass
-                elif action == "del_favourite":
-                    pass
+                elif action == "toogle_favourite":
+                    content_id = params.get("contentId")
+                    value = utils.get_bool(params.get("value"))
+                    mediatype = params.get("mediatype")
+                    utils.call_service("set_favourite", {"contentId": content_id, "value": value, "mediatype":mediatype})
+                    xbmc.executebuiltin("Container.Refresh()")
                 elif action == "search":
                     keyword = Dialogs.get_text_input("Keyword")
                     if keyword != None and len(keyword) > 0:
