@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.timvision" name="TIMVISION" version="1.0.12" provider-name="pinoelefante">
+<addon id="plugin.video.timvision" name="TIMVISION" version="1.0.13" provider-name="pinoelefante">
   <requires>
     <import addon="xbmc.python" version="2.25.0"/>
     <import addon="script.module.requests" version="2.12.4"/>
@@ -19,10 +19,11 @@
     <platform>all</platform>
     <license>GPL</license>
     <source>https://github.com/pinoelefante/plugin.video.timvision</source>
-    <news>v1.0.12
-- Calcolo del delta threshold
-- "Continua a guardare" ora mostra l'episodio della serie da vedere
-- Code refactoring
+    <news>v1.0.13
+- Richiesta ripresa visione
+- Logout automatico dopo un'ora di inattività
+- Preferiti: aggiungi/rimuovi film
+- Preferiti: aggiungi/rimuovi serie ai preferiti locali
     </news>
   </extension>
 </addon>

@@ -2,6 +2,10 @@ import urlparse, urllib, urllib2
 import json
 from resources.lib import Logger
 import xbmc, xbmcaddon
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 def get_bool(text):
     text = text.lower()
@@ -40,8 +44,8 @@ def get_user_agent():
 def get_parameters_dict_from_url(parameters):
     return dict(urlparse.parse_qsl(parameters[1:]))
 
-def url_join(baseUrl='', other=''):
-    return baseUrl + ('/' if not baseUrl.endswith('/') and not other.startswith('/') else '') + other
+def url_join(base_url='', other=''):
+    return base_url + ('/' if not base_url.endswith('/') and not other.startswith('/') else '') + other
 
 def get_addon(addon_id):
     is_enabled = False
@@ -81,3 +85,28 @@ def get_timestring_from_seconds(seconds):
     m, s = divmod(seconds, 60)
     h, m = divmod(m, 60)
     return "%d:%02d:%02d" % (h, m, s)
+
+def get_data_folder():
+    kodi_profile_dir = xbmcaddon.Addon().getAddonInfo("profile")
+    return xbmc.translatePath(kodi_profile_dir)
+
+def save_pickle(item, pickle_file):
+    folder = get_data_folder()
+    path = url_join(folder, pickle_file)
+    with open(path, "w") as file_stream:
+        file_stream.truncate()
+        pickle.dump(item, file_stream)
+    file_stream.close()
+
+def load_pickle(pickle_file, default=None):
+    folder = get_data_folder()
+    path = url_join(folder, pickle_file)
+    try:
+        content = default
+        with open(path, "r") as file_stream:
+            content = pickle.load(file_stream)
+        file_stream.close()
+        return content
+    except:
+        Logger.kodi_log("Error while loading %s" % (pickle_file))
+        return default

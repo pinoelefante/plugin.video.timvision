@@ -25,9 +25,9 @@ def parse_collection(collection):
 def get_item_type(value):
     if value == "EPISODE":
         return ITEM_EPISODE
-    elif value == "SERIES_ITEM":
+    elif value in ["SERIES_ITEM", "SERIES_DETAILS"]:
         return ITEM_TVSHOW
-    elif value == "MOVIE_ITEM":
+    elif value in ["MOVIE_ITEM", "CONTENT_DETAILS"]:
         return ITEM_MOVIE
     elif value == "SEASON":
         return ITEM_SEASON
@@ -172,10 +172,10 @@ class TimVisionContent(TimVisionBaseObject):
             actions.extend([("Play Trailer della Stagione", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=play_trailer&contentId="+self.content_id+"&type=TVSHOW)")])
             #actions.extend([("Gia' Visto", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=play_item&contentId="+self.content_id+"&duration="+str(self.duration)+"&video_type=VOD&has_hd=False&startPoint="+str(int(self.duration)-1)+")")])
         elif  self.mediatype == ITEM_TVSHOW:
-            #if is_fav:
-            #    actions.extend([("Rimuovi da preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=False&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype))])
-            #else:
-            #    actions.extend([("Aggiungi a preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=True&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype))])
+            if is_fav:
+                actions.extend([("Rimuovi da preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=False&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype))])
+            else:
+                actions.extend([("Aggiungi a preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=True&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype))])
             pass
         elif  self.mediatype == ITEM_SEASON:
             actions.extend([("Play Trailer", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=play_trailer&contentId="+self.content_id+"&type=TVSHOW)")])

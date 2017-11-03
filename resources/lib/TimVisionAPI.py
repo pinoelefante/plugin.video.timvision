@@ -223,19 +223,21 @@ class TimVisionSession(object):
     def set_favorite(self, content_id, favorite, mediatype):
         choise = "Y" if favorite else "N"
         url = "/besc?action=SetFavorite&isFavorite="+choise+"&contentId="+content_id+"&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}"
-        response = self.send_request(url, self.BASE_URL_AVS)
-        if response != None and response["resultCode"] == "OK":
-            if favorite:
-                res_detail = self.get_details(content_id)
-                if res_detail is None:
-                    self.favourites.append(TimVisionObjects.TimVisionBaseObject(content_id, '!!!TITLE ERROR!!!'))
-                    return True
-                content = TimVisionObjects.parse_content(res_detail, mediatype)
-                self.favourites.append(content)
-            else:
-                self.favourites = [x for x in self.favourites if x.content_id != content_id]
-            return True
-        return False
+
+        if mediatype == TimVisionObjects.ITEM_MOVIE:
+            response = self.send_request(url, self.BASE_URL_AVS)
+            if response is None or response["resultCode"] != "OK":
+                return False
+
+        if favorite:
+            res_detail = self.get_details(content_id)
+            if res_detail is None:
+                res_detail = {"metadata":{"contentId":content_id, "title":"Content %s" % (content_id)}}
+            self.favourites.append(res_detail)
+        else:
+            self.favourites = [x for x in self.favourites if int(x["metadata"]["contentId"]) != int(content_id)]
+        utils.save_pickle(self.favourites, "favourites.pickle")
+        return True
 
     def get_details(self, content_id):
         url = "/DETAILS?contentId=%s&deviceType=WEB&serviceName=CUBOVISION&type=VOD" % (str(content_id))
@@ -246,20 +248,30 @@ class TimVisionSession(object):
         return detail
 
     def get_favourites(self):
+        if self.favourites != None:
+            return self.favourites
         #can use from-to instead of maxresults
         url = "/TRAY/FAVORITES?dataSet=RICH&area=ALL&category=ALL&maxResults=1000&deviceType={deviceType}&serviceName={serviceName}"
         result = self.get_contents(url)
         if result != None:
-            self.favourites = TimVisionObjects.parse_collection(result)
-            return True
-        return False
+            self.favourites = self.__update_favourites_db(result)
+        return self.favourites
+    
+    def __update_favourites_db(self, online_items):
+        offline_items = utils.load_pickle("favourites.pickle", [])
+        offline_tv_shows = [x for x in offline_items if x["layout"] in ["SERIES_ITEM", "SERIES_DETAILS"]]
+        #online_items contiene solo film
+        online_items.extend(offline_tv_shows)
+        utils.save_pickle(online_items, "favourites.pickle")
+        return online_items
 
     def is_favourite(self, content_id):
         if self.favourites is None and not self.get_favourites():
             return False
         for item in self.favourites:
-            if item.content_id == content_id:
-                return True
+            item_c_id = item["metadata"]["contentId"] if "contentId" in item["metadata"] else item["contentId"]
+            if int(item_c_id) == int(content_id):
+                    return True
         return False
 
     def get_season_trailer(self, season_id):

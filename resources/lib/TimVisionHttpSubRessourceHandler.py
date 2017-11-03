@@ -114,6 +114,9 @@ class TimVisionHttpSubRessourceHandler(object):
         mediatype = params.get("mediatype")[0]
         return self.timvision_session.set_favorite(content_id, value, mediatype)
 
+    def get_favourite(self, params):
+        return self.timvision_session.get_favourites()
+
     def is_favourite(self, params):
         content_id = params.get("contentId")[0]
         return self.timvision_session.is_favourite(content_id)

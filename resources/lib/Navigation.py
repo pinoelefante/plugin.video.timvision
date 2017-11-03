@@ -75,13 +75,20 @@ class Navigation(object):
                     content_id = params.get("contentId")
                     value = utils.get_bool(params.get("value"))
                     mediatype = params.get("mediatype")
-                    utils.call_service("set_favourite", {"contentId": content_id, "value": value, "mediatype":mediatype})
-                    xbmc.executebuiltin("Container.Refresh()")
+                    response = utils.call_service("set_favourite", {"contentId": content_id, "value": value, "mediatype":mediatype})
+                    if response:
+                        Dialogs.show_message("Aggiunto ai preferiti" if value else "Rimosso dai preferiti", "Preferiti", xbmcgui.NOTIFICATION_INFO)
+                        xbmc.executebuiltin("Container.Refresh()")
+                    else:
+                        Dialogs.show_dialog("Non e' stato possibile completare l'azione", "Errore")
                 elif action == "search":
                     keyword = Dialogs.get_text_input("Keyword")
                     if keyword != None and len(keyword) > 0:
                         items = utils.call_service("search", {"keyword":keyword})
                         return self.add_items_to_folder(items)
+                elif action == "favourites":
+                    items = utils.call_service("get_favourite")
+                    return self.add_items_to_folder(items)
 
     def verifica_login(self, count=0):
         logged = utils.call_service("is_logged")
@@ -110,7 +117,8 @@ class Navigation(object):
             uri = cat["actions"][0]["uri"]
             page_id = uri[6:uri.find("?")]
             xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=utils.url_join(self.plugin_dir, "?page=%s&category_id=%s" % (label, page_id)), isFolder=True, listitem=list_item)
-
+        list_item = xbmcgui.ListItem(label='Preferiti')
+        xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=utils.url_join(self.plugin_dir, "?action=favourites"), isFolder=True, listitem=list_item)
         list_item = xbmcgui.ListItem(label="Cerca...")
         xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=utils.url_join(self.plugin_dir, "?action=search"), isFolder=True, listitem=list_item)
 
@@ -137,6 +145,7 @@ class Navigation(object):
     def add_items_to_folder(self, items, is_episodes=False, title=''):
         if len(items) == 0:
             Dialogs.show_dialog("Non sono presenti contenuti? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Elenco vuoto")
+            xbmcplugin.endOfDirectory(handle=self.plugin_handle)
             return False
         items = TimVisionObjects.parse_collection(items)
         for item in items:
