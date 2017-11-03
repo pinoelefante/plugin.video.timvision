@@ -248,6 +248,7 @@ class TimVisionSession(object):
         return detail
 
     def get_favourites(self):
+        #rimuovere cache ?
         if self.favourites != None:
             return self.favourites
         #can use from-to instead of maxresults
