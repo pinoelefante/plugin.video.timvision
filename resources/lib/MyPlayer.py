@@ -31,7 +31,7 @@ class MyPlayer(xbmc.Player):
         self.start_from = start_point
         self.current_video_type = content_type
         self.total_time = int(total_time)
-        Logger.log_on_desktop_file("Setting item (%s - %s) Duration (%d): %s" % (content_id, content_type, self.total_time, url), filename=Logger.LOG_PLAYER_FILE)
+        Logger.log_on_desktop_file("Setting item (%s - %s) Duration (%d/%d): %s" % (content_id, content_type, self.start_from, self.total_time, url), filename=Logger.LOG_PLAYER_FILE)
 
     def onPlayBackStarted(self):
         self.listen = self.current_item == self.getPlayingFile()
@@ -77,13 +77,25 @@ class MyPlayer(xbmc.Player):
 
     def check_time(self):
         proposed = False
+        to_resume = self.start_from >= 10
+        Logger.log_on_desktop_file("Is to resume: " + str(to_resume), Logger.LOG_PLAYER_FILE)
         while not self.playback_thread_stop_event.isSet():
             if self.isPlaying():
                 self.current_time = int(self.getTime())
-
+                Logger.log_on_desktop_file("Time: %d/%d" % (self.current_time, self.total_time), Logger.LOG_PLAYER_FILE)
                 if self.current_time > self.total_time: #happens at the beginning of the video
+                    Logger.log_on_desktop_file("Invalid current_time", Logger.LOG_PLAYER_FILE)
                     continue
-
+                while to_resume:
+                    Logger.log_on_desktop_file("Trying to resume")
+                    try:
+                        Logger.log_on_desktop_file("Seek to %d" % (self.start_from), Logger.LOG_PLAYER_FILE)
+                        self.seekTime(self.start_from)
+                        if abs(self.getTime()-self.start_from) < 10:
+                            to_resume = False
+                    except:
+                        Logger.log_on_desktop_file("Error trying to seek")
+                        xbmc.sleep(100)
                 remaining = self.total_time - self.current_time
                 if self.current_video_type == TimVisionObjects.ITEM_MOVIE and remaining <= 120 and not proposed:
                     Logger.log_on_desktop_file("Proposing suggested movies", Logger.LOG_PLAYER_FILE)
@@ -91,7 +103,6 @@ class MyPlayer(xbmc.Player):
                 elif self.current_video_type == TimVisionObjects.ITEM_EPISODE and remaining <= 30 and not proposed and utils.get_setting("play_next_episode"):
                     Logger.log_on_desktop_file("Proposing next episode", Logger.LOG_PLAYER_FILE)
                     proposed = True
-
             self.playback_thread_stop_event.wait(5)
 
         complete_percentage = self.current_time * 100.0 / self.total_time

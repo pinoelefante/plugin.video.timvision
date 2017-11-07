@@ -207,9 +207,17 @@ class Navigation(object):
         if license_key != None:
             play_item.setProperty(inputstream + '.license_type', 'com.widevine.alpha')
             play_item.setProperty(inputstream + '.license_key', license_key+'|'+user_agent+'&'+license_headers+'|R{SSM}|')
-            if not utils.get_setting("always_resume") and float(start_offset) > 10:
-                message = "Vuoi riprendere la visione da %s?" % (utils.get_timestring_from_seconds(float(start_offset)))
-                start_offset = start_offset if Dialogs.ask(message, "Riprendi visione") else 0.0
+            
+            start_offset = int(start_offset)
+            duration = int(duration)
+            if start_offset >= 10 and duration-start_offset > 30:
+                if not utils.get_setting("always_resume"):
+                    xbmc.executebuiltin("Dialog.Close(all, true)")
+                    message = "Vuoi riprendere la visione da [%s]?" % (utils.get_timestring_from_seconds(start_offset))
+                    start_offset = start_offset if Dialogs.ask(message, "Riprendi visione") else 0
+            else:
+                start_offset = 0
+            
             utils.call_service("set_playing_item", {"url":url, "contentId":content_id, "time":start_offset, "videoType":content_type, "duration":duration})
             xbmcplugin.setResolvedUrl(handle=self.plugin_handle, succeeded=True, listitem=play_item)
         else:

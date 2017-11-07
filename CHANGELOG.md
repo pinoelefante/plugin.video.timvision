@@ -1,3 +1,9 @@
+**v1.0.14 (2017-11-07)**
+- Migliorata la richiesta di ripresa visione
+- I video che hanno meno di 30 secondi dalla fine, inizieranno dall'inizio
+- Bookmark degli episodi di "Continua a guardare" non venivano caricati
+- Migliorato la modalità di ripresa dei video (non funziona sempre)
+
 **v1.0.13 (2017-11-03)**
 - Richiesta ripresa visione
 - Logout automatico dopo un'ora di inattività
@@ -42,7 +48,7 @@
 - Fix video sempre in HD anche se l'opzione era disabilitata
 
 **v1.0.1 (2017-08-20)**
--Riproduzione in alta definizione
+- Riproduzione in alta definizione
 
 **v1.0.0 (2017-08-19)**
 - Riproduzione video funzionante

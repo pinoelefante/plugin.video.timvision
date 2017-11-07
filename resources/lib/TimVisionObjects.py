@@ -76,6 +76,7 @@ def parse_content(item, mediatype):
         content.episode = int(item["metadata"]["watchNextObj"]["episodeNumber"])
         content.season = int(item["metadata"]["watchNextObj"]["season"])
         content.duration = item["metadata"]["watchNextObj"]["duration"]
+        content.bookmark = int(item["metadata"]["bookmark"]) if "bookmark" in item["metadata"] else 0
         content.title = "%s (%02dx%02d) - %s" % (series_name, content.season, content.episode, episode_title)
         content.is_hd_available = False
 
@@ -173,9 +174,9 @@ class TimVisionContent(TimVisionBaseObject):
             #actions.extend([("Gia' Visto", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=play_item&contentId="+self.content_id+"&duration="+str(self.duration)+"&video_type=VOD&has_hd=False&startPoint="+str(int(self.duration)-1)+")")])
         elif  self.mediatype == ITEM_TVSHOW:
             if is_fav:
-                actions.extend([("Rimuovi da preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=False&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype))])
+                actions.extend([("Rimuovi da preferiti (locale)", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=False&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype))])
             else:
-                actions.extend([("Aggiungi a preferiti", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=True&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype))])
+                actions.extend([("Aggiungi a preferiti (locale)", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=True&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype))])
             pass
         elif  self.mediatype == ITEM_SEASON:
             actions.extend([("Play Trailer", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=play_trailer&contentId="+self.content_id+"&type=TVSHOW)")])
