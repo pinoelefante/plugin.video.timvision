@@ -201,12 +201,3 @@ class TimVisionContent(TimVisionBaseObject):
         if gens is None:
             return
         self.genres = utils.string_to_list(gens, ',')
-
-class TimVisionPerson(object):
-    name = ""
-    role = None
-    image_url = None
-
-    def __init__(self, name, image):
-        self.name = name
-        self.image_url = image
