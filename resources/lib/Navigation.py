@@ -105,24 +105,28 @@ class Navigation(object):
         return logged
 
     def create_main_page(self):
+        error = False
         categories = utils.call_service("get_categories")
         if categories is None:
-            Dialogs.show_dialog("Controlla di avere la connessione attiva. Se l'errore persiste, contatta lo sviluppatore del plugin", "Errore")
-            return
-        for cat in categories:
-            label = cat["metadata"]["label"]
-            if label == "A NOLEGGIO":
-                continue
-            list_item = xbmcgui.ListItem(label=label.lower().capitalize())
-            uri = cat["actions"][0]["uri"]
-            page_id = uri[6:uri.find("?")]
-            xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=utils.url_join(self.plugin_dir, "?page=%s&category_id=%s" % (label, page_id)), isFolder=True, listitem=list_item)
+            error = True
+        else:
+            for cat in categories:
+                label = cat["metadata"]["label"]
+                if label == "A NOLEGGIO":
+                    continue
+                list_item = xbmcgui.ListItem(label=label.lower().capitalize())
+                uri = cat["actions"][0]["uri"]
+                page_id = uri[6:uri.find("?")]
+                xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=utils.url_join(self.plugin_dir, "?page=%s&category_id=%s" % (label, page_id)), isFolder=True, listitem=list_item)
         list_item = xbmcgui.ListItem(label='Preferiti')
         xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=utils.url_join(self.plugin_dir, "?action=favourites"), isFolder=True, listitem=list_item)
         list_item = xbmcgui.ListItem(label="Cerca...")
         xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=utils.url_join(self.plugin_dir, "?action=search"), isFolder=True, listitem=list_item)
 
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
+
+        if error:
+            Dialogs.show_dialog("Controlla di avere la connessione attiva. Se l'errore persiste, contatta lo sviluppatore del plugin", "Errore")
 
     def create_category_page(self, page_id, ha_elenco=False, category_name=''):
         if ha_elenco:
