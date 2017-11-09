@@ -1,3 +1,6 @@
+**v1.0.15 (2017-11-09)**
+- Avvio del webservice se il suo avvio è fallito precedentemente
+
 **v1.0.14 (2017-11-07)**
 - Migliorata la richiesta di ripresa visione
 - I video che hanno meno di 30 secondi dalla fine, inizieranno dall'inizio

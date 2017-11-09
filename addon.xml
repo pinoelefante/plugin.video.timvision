@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.timvision" name="TIMVISION" version="1.0.14" provider-name="pinoelefante">
+<addon id="plugin.video.timvision" name="TIMVISION" version="1.0.15" provider-name="pinoelefante">
   <requires>
     <import addon="xbmc.python" version="2.25.0"/>
     <import addon="script.module.requests" version="2.12.4"/>
@@ -19,11 +19,8 @@
     <platform>all</platform>
     <license>GPL</license>
     <source>https://github.com/pinoelefante/plugin.video.timvision</source>
-    <news>v1.0.14 (2017-11-07)
-- Migliorata la richiesta di ripresa visione
-- I video che hanno meno di 30 secondi dalla fine, inizieranno dall'inizio
-- Bookmark degli episodi di "Continua a guardare" non venivano caricati
-- Migliorato la modalità di ripresa dei video (non funziona sempre)
+    <news>v1.0.15 (2017-11-09)
+- Avvio del web service se fallito all'avvio di Kodi
     </news>
   </extension>
 </addon>

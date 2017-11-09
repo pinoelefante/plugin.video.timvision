@@ -177,7 +177,6 @@ class TimVisionContent(TimVisionBaseObject):
                 actions.extend([("Rimuovi da preferiti (locale)", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=False&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype))])
             else:
                 actions.extend([("Aggiungi a preferiti (locale)", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=toogle_favourite&value=True&contentId=%s&mediatype=%s)" % (str(self.content_id), self.mediatype))])
-            pass
         elif  self.mediatype == ITEM_SEASON:
             actions.extend([("Play Trailer", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=play_trailer&contentId="+self.content_id+"&type=TVSHOW)")])
         list_item.addContextMenuItems(items=actions)
