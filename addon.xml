@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.timvision" name="TIMVISION" version="1.0.16" provider-name="pinoelefante">
+<addon id="plugin.video.timvision" name="TIMVISION" version="1.0.17" provider-name="pinoelefante">
   <requires>
     <import addon="xbmc.python" version="2.25.0"/>
     <import addon="script.module.requests" version="2.12.4"/>
@@ -19,8 +19,8 @@
     <platform>all</platform>
     <license>GPL</license>
     <source>https://github.com/pinoelefante/plugin.video.timvision</source>
-    <news>v1.0.16 (2017-11-09)
-- Carica l'addon anche se TIMVISION è offline
+    <news>v1.0.17 (2017-11-10)
+- Timvision base url fix
     </news>
   </extension>
 </addon>
