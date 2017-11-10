@@ -1,3 +1,9 @@
+**v1.0.17 (2017-11-10)**
+- Composizione dinamica dell'url base TIM
+
+**v1.0.16 (2017-11-09)**
+- L'addon viene caricato anche se non è possibile caricare il menu
+
 **v1.0.15 (2017-11-09)**
 - Avvio del webservice se il suo avvio è fallito precedentemente
 
