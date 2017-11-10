@@ -17,12 +17,13 @@ SERVICE_CHANNEL = 'CUBOWEB'
 PROVIDER_NAME = "TELECOMITALIA"
 
 class TimVisionSession(object):
-    BASE_URL_TIM = "https://www.timvision.it/TIM/{appVersion}/PRODSVOD_WEB/IT/{channel}/ITALY"
+    BASE_URL_TIM = "https://www.timvision.it/TIM/{appVersion}/{cluster}/IT/{channel}/ITALY"
     BASE_URL_AVS = "https://www.timvision.it/AVS"
     app_version = '10.4.11'
     api_endpoint = session()
     license_endpoint = session()
     user_http_header = "X-Avs-Username"
+    user_cluster = "PROD"
     session_login_hash = None
     widevine_proxy_url = "https://license.cubovision.it/WidevineManager/WidevineManager.svc/GetLicense/{ContentIdAVS}/{AssetIdWD}/{CpId}/{Type}/{ClientTime}/{Channel}/{DeviceType}"
     player = None
@@ -62,6 +63,7 @@ class TimVisionSession(object):
         if data != None:
             self.user_http_header = data['resultObj']['USER_REQ_HEADER_NAME']
             self.widevine_proxy_url = data['resultObj']['WV_PROXY_URL']
+            self.user_cluster = data['resultObj']['USERCLUSTERNAME_ANONYMOUS']
             return True
         return False
 
@@ -109,7 +111,7 @@ class TimVisionSession(object):
         return self.session_login_hash != None
 
     def __compile_url(self, url):
-        return url.replace("{appVersion}", self.app_version).replace("{channel}", SERVICE_CHANNEL).replace("{serviceName}", SERVICE_NAME).replace("{deviceType}", DEVICE_TYPE).replace("{providerName}", PROVIDER_NAME)
+        return url.replace("{appVersion}", self.app_version).replace("{channel}", SERVICE_CHANNEL).replace("{serviceName}", SERVICE_NAME).replace("{deviceType}", DEVICE_TYPE).replace("{providerName}", PROVIDER_NAME).replace("{cluster}", self.user_cluster)
 
     def send_request(self, url, base_url, method="GET", data={}):
         if not url.startswith("https://"):
