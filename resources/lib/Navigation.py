@@ -199,7 +199,9 @@ class Navigation(object):
             #TODO try get ism manifest
             Dialogs.show_dialog("Si e' verificato un errore o non e' possibile vedere il contenuto su questo dispositivo")
             return
-        self.play(content_id, license_info["mpd_file"], license_info["widevine_url"], "AVS_COOKIE="+license_info["avs_cookie"], start_offset, video_type, duration)
+        user_agent = utils.get_user_agent()
+        headers = "%s&AVS_COOKIE=%s&Connection=keep-alive" % (user_agent, license_info["avs_cookie"])
+        self.play(content_id, license_info["mpd_file"], license_info["widevine_url"], headers, start_offset, video_type, duration)
 
     def play(self, content_id=None, url=None, license_key=None, license_headers="", start_offset=0.0, content_type='', duration=0):
         inputstream, is_enabled = utils.get_addon('inputstream.adaptive')
@@ -217,13 +219,13 @@ class Navigation(object):
         play_item = xbmcgui.ListItem(path=url)
         play_item.setContentLookup(False)
         play_item.setMimeType('application/dash+xml')
-        play_item.setProperty(inputstream + '.stream_headers', user_agent)
+        play_item.setProperty(inputstream + '.stream_headers', "%s&Connection=keep-alive" % (user_agent))
         play_item.setProperty(inputstream + '.manifest_type', 'mpd')
         play_item.setProperty('inputstreamaddon', "inputstream.adaptive")
 
         if license_key != None:
             play_item.setProperty(inputstream + '.license_type', 'com.widevine.alpha')
-            play_item.setProperty(inputstream + '.license_key', license_key+'|'+user_agent+'&'+license_headers+'|R{SSM}|')
+            play_item.setProperty(inputstream + '.license_key', license_key+'|'+license_headers+'|R{SSM}|')
             
             start_offset = int(start_offset)
             duration = int(duration)

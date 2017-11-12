@@ -15,6 +15,8 @@ class MyPlayer(xbmc.Player):
     listen = False
     playback_thread_stop_event = None
     is_paused = False
+    keep_alive_limit = 600
+    keep_alive_token = None
 
     last_time_end = 0
 
@@ -41,7 +43,7 @@ class MyPlayer(xbmc.Player):
             self.seekTime(float(self.start_from))
         Logger.log_on_desktop_file("Listening ("+self.current_content_id+"): "+str(self.listen), filename=Logger.LOG_PLAYER_FILE)
         Logger.log_on_desktop_file("Started ("+self.current_content_id+")", Logger.LOG_PLAYER_FILE)
-        utils.call_service("keep_alive", {"contentId": self.current_content_id})
+        self.send_keep_alive()
         self.playback_thread_stop_event = threading.Event()
         check_thread = threading.Thread(target=self.check_time)
         check_thread.start()
@@ -79,6 +81,7 @@ class MyPlayer(xbmc.Player):
         proposed = False
         to_resume = self.start_from >= 10
         Logger.log_on_desktop_file("Is to resume: " + str(to_resume), Logger.LOG_PLAYER_FILE)
+        time_elapsed = 0
         while not self.playback_thread_stop_event.isSet():
             if self.isPlaying():
                 self.current_time = int(self.getTime())
@@ -104,22 +107,18 @@ class MyPlayer(xbmc.Player):
                     Logger.log_on_desktop_file("Proposing next episode", Logger.LOG_PLAYER_FILE)
                     proposed = True
             self.playback_thread_stop_event.wait(5)
-
+            time_elapsed += 5
+            if time_elapsed >= self.keep_alive_limit and self.send_keep_alive():
+                time_elapsed = 0
+        
+        # out of while
         complete_percentage = self.current_time * 100.0 / self.total_time
         Logger.log_on_desktop_file("Stopping (%s) - %.3f%%" % (self.current_content_id, complete_percentage), Logger.LOG_PLAYER_FILE)
         if complete_percentage >= 97.5:
             utils.call_service("set_content_seen", {"contentId":self.current_content_id, "duration": int(self.total_time)})
         elif self.current_time > 10:
             utils.call_service("stop_content", {"contentId":str(self.current_content_id), "time":int(self.current_time), "threshold": int(self.threshold)})
-        self.current_item = None
-        self.current_content_id = None
-        self.current_time = 0
-        self.threshold = 0
-        self.start_from = 0
-        self.listen = False
-        self.last_time_end = time.time()
-        self.is_paused = False
-        self.total_time = 0
+        self.reset_player()
 
     def threshold_calculation(self):
         last_check = time.time()
@@ -136,3 +135,26 @@ class MyPlayer(xbmc.Player):
         if self.isPlaying():
             return time.time()
         return self.last_time_end
+
+    def send_keep_alive(self):
+        ka_resp = utils.call_service("keep_alive", {"contentId": self.current_content_id})
+        if ka_resp != None:
+            Logger.log_on_desktop_file("Keep Alive OK!", Logger.LOG_PLAYER_FILE)
+            self.keep_alive_limit = int(ka_resp["resultObj"]["keepAlive"])
+            self.keep_alive_token = ka_resp["resultObj"]["token"]
+            return True
+        Logger.log_on_desktop_file("Keep Alive FAILED!", Logger.LOG_PLAYER_FILE)
+        return False
+
+    def reset_player(self):
+        self.current_item = None
+        self.current_content_id = None
+        self.current_time = 0
+        self.total_time = 0
+        self.threshold = 0
+        self.start_from = 0
+        self.listen = False
+        self.last_time_end = time.time()
+        self.is_paused = False
+        self.keep_alive_token = None
+        self.keep_alive_limit = 600
