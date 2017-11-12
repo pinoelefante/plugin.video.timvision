@@ -81,6 +81,17 @@ def get_addon(addon_id):
         return (addon_id, is_enabled)
     return (None, is_enabled)
 
+def get_kodi_version():
+    payload = {
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'Application.GetProperties',
+        'params': [["version"]]
+    }
+    response = xbmc.executeJSONRPC(json.dumps(payload))
+    data = json.loads(response)
+    return int(data["result"]["version"]["major"]), int(data["result"]["version"]["minor"])
+
 def list_to_string(mylist, separator=', '):
     if mylist is None:
         return ""

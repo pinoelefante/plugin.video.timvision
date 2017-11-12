@@ -1,5 +1,7 @@
 import urllib
-import xbmc, xbmcgui, xbmcplugin
+import xbmc
+import xbmcgui
+import xbmcplugin
 from resources.lib import utils, Dialogs, TimVisionAPI, Logger, TimVisionObjects
 
 class Navigation(object):
@@ -104,6 +106,15 @@ class Navigation(object):
                     return self.verifica_login(count+1)
         return logged
 
+    def verify_version(self, force=False):
+        major, minor = utils.get_kodi_version()
+        if major >= 18 or (major == 17 and minor >= 4):
+            return True
+        if not utils.get_setting("kodi_version_alert_shown") or force:
+            Dialogs.show_dialog("La riproduzione su questa versione di Kodi non e' supportata.\n\nRichiesto Kodi 17.4 o superiore", "Riproduzione non supportata")
+            utils.set_setting("kodi_version_alert_shown", "true")
+        return False
+
     def create_main_page(self):
         error = False
         categories = utils.call_service("get_categories")
@@ -181,6 +192,8 @@ class Navigation(object):
             Dialogs.show_message("Il contenuto non ha un trailer", "Trailer assente")
 
     def play_video(self, content_id, video_type, has_hd=False, start_offset=0.0, duration=0):
+        if not self.verify_version(True):
+            return
         license_info = utils.call_service("get_license_video", {"contentId": content_id, "videoType": video_type, "has_hd":has_hd})
         if license_info is None:
             #TODO try get ism manifest

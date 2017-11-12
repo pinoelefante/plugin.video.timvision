@@ -165,8 +165,9 @@ class TimVisionSession(object):
             asset_id_wd = TimVisionSession.get_asset_id_wd(mpd)
             if has_hd and utils.get_setting("prefer_hd"):
                 mpd = mpd.replace("_SD.mpd", "_HD.mpd")
+            major_version, __minor_version = utils.get_kodi_version()
             wv_url = self.widevine_proxy_url.replace("{ContentIdAVS}", content_id).replace("{AssetIdWD}", asset_id_wd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", SERVICE_CHANNEL).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
-            if utils.get_setting("inputstream_kodi17"):
+            if major_version < 18:
                 wv_url = utils.url_join(utils.get_service_url(), "?action=get_license&license_url=%s" % (urllib.quote(wv_url)))
             return {
                 "mpd_file": mpd,
@@ -274,7 +275,7 @@ class TimVisionSession(object):
         for item in self.favourites:
             item_c_id = item["metadata"]["contentId"] if "contentId" in item["metadata"] else item["contentId"]
             if int(item_c_id) == int(content_id):
-                    return True
+                return True
         return False
 
     def get_season_trailer(self, season_id):
