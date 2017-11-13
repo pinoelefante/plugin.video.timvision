@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.timvision" name="TIMVISION" version="1.0.17" provider-name="pinoelefante">
+<addon id="plugin.video.timvision" name="TIMVISION" version="1.0.18" provider-name="pinoelefante">
   <requires>
     <import addon="xbmc.python" version="2.25.0"/>
     <import addon="script.module.requests" version="2.12.4"/>
@@ -19,8 +19,12 @@
     <platform>all</platform>
     <license>GPL</license>
     <source>https://github.com/pinoelefante/plugin.video.timvision</source>
-    <news>v1.0.17 (2017-11-10)
-- Timvision base url fix
+    <news>v1.0.18 (2017-11-13)
+- Invio richieste di KeepAlive durante la riproduzione
+- Il player non inviava richieste a TIMVISION (parziale)
+- Bugfix ricerca contenuti con spazio
+- Rimossa "Modalità compatibilità Kodi 17.x" poiché viene rilevata automaticamente
+- Verifica versione di Kodi all'avvio dell'addon
     </news>
   </extension>
 </addon>

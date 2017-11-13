@@ -1,3 +1,10 @@
+**v1.0.18 (2017-11-13)**
+- Invio richieste di KeepAlive durante la riproduzione
+- Il player non inviava richieste a TIMVISION (parziale #9)
+- Bugfix ricerca contenuti con spazio
+- Rimossa "Modalità compatibilità Kodi 17.x" poiché viene rilevata automaticamente
+- Verifica versione di Kodi all'avvio dell'addon
+
 **v1.0.17 (2017-11-10)**
 - Composizione dinamica dell'url base TIM
 
