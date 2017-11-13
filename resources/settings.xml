@@ -14,10 +14,6 @@
     <setting id="play_next_episode" type="bool" label="Riproduci automaticamente l'episodio successivo" value="true" default="true" visible="false" />
   </category>
   <category label="Debug">
-    <!--
-    <setting id="inputstream_kodi17" label="Modalità compatibilita' Kodi 17.x" type="bool" value="true" default="true"/>
-    <setting type="sep"/>
-    -->
     <setting id="log_all_apicalls" label="Log api calls" type="bool" value="false" default="false"/>
     <setting type="sep"/>
     <setting id="abilita_log_desktop" label="Log file su desktop" type="bool" value="false" default="false"/>
@@ -26,6 +22,6 @@
     <setting id="logd_widevine" label="Widevine log" type="bool" value="true" default="true" enable="eq(-3 ,true)"/>
     <!-- Hidden -->
     <setting id="timvision_service_port" value="8001" visible="false"/>
-    <setting id="kodi_version_alert_shown" type="bool" value="false" default="false"/>
+    <setting id="kodi_version_alert_shown" type="bool" value="false" default="false" visible="false"/>
   </category>
 </settings>

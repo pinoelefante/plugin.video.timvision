@@ -17,6 +17,7 @@ class Navigation(object):
         params = utils.get_parameters_dict_from_url(parameters)
         params_count = len(params)
         if params_count == 0:
+            self.verify_version()
             self.create_main_page()
         else:
             if params.has_key("page"):

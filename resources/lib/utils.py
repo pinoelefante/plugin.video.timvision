@@ -90,7 +90,9 @@ def get_kodi_version():
     }
     response = xbmc.executeJSONRPC(json.dumps(payload))
     data = json.loads(response)
-    return int(data["result"]["version"]["major"]), int(data["result"]["version"]["minor"])
+    major = int(data["result"]["version"]["major"])
+    minor = int(data["result"]["version"]["minor"])
+    return major, minor
 
 def list_to_string(mylist, separator=', '):
     if mylist is None:
@@ -145,7 +147,7 @@ def select_unused_port():
 
 def start_webserver():
     Logger.kodi_log("Starting webserver")
-
+    
     # pick & store a port for the internal TimVision HTTP proxy service
     tv_port = select_unused_port()
     set_setting('timvision_service_port', str(tv_port))
@@ -155,29 +157,12 @@ def start_webserver():
 
     # configure the TimVision Data Server
     from resources.lib.TimVisionHttpRequestHandler import TimVisionHttpRequestHandler
-    nd_server = SocketServer.TCPServer(('127.0.0.1', tv_port), TimVisionHttpRequestHandler)
-    nd_server.server_activate()
-    nd_server.timeout = 1
+    tv_server = SocketServer.TCPServer(('127.0.0.1', tv_port), TimVisionHttpRequestHandler)
+    tv_server.server_activate()
+    tv_server.timeout = 1
 
-    ws_thread = threading.Thread(target=__start_webserver, args=([nd_server]))
-    ws_thread.daemon = True
-    ws_thread.start()
+    tv_thread = threading.Thread(target=tv_server.serve_forever)
+    tv_thread.daemon = True
+    tv_thread.start()
 
-def __start_webserver(nd_server):
-    monitor = xbmc.Monitor()
-
-    # start thread for TimVision HTTP service
-    nd_thread = threading.Thread(target=nd_server.serve_forever)
-    nd_thread.daemon = True
-    nd_thread.start()
-
-    # kill the services if kodi monitor tells us to
-    while not monitor.abortRequested():
-        if monitor.waitForAbort(5):
-            nd_server.shutdown()
-            break
-
-    # webserver shutdown sequence
-    nd_server.server_close()
-    nd_server.socket.close()
-    nd_server.shutdown()
+    return tv_server

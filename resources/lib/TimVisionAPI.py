@@ -26,14 +26,13 @@ class TimVisionSession(object):
     user_cluster = "PROD"
     session_login_hash = None
     widevine_proxy_url = "https://license.cubovision.it/WidevineManager/WidevineManager.svc/GetLicense/{ContentIdAVS}/{AssetIdWD}/{CpId}/{Type}/{ClientTime}/{Channel}/{DeviceType}"
-    player = None
+    player = MyPlayer.MyPlayer()
     last_time_request_received = 0
     favourites = None
     avs_cookie = None
     stop_check_session = None
 
     def __init__(self):
-        self.player = MyPlayer.MyPlayer()
         self.api_endpoint.headers.update({
             'User-Agent': utils.get_user_agent(),
             'Accept-Encoding': 'gzip, deflate',
@@ -296,6 +295,7 @@ class TimVisionSession(object):
         return None
 
     def search(self, keyword, area=AREA_FREE):
+        keyword = urllib.quote(keyword)
         url = "/TRAY/SEARCHRECOM?keyword="+keyword+"&from=0&to=100&area="+area+"&category=ALL&deviceType={deviceType}&serviceName={serviceName}"
         response = self.send_request(url, self.BASE_URL_TIM)
         if response != None:
@@ -318,7 +318,7 @@ class TimVisionSession(object):
     def keep_alive(self, content_id):
         url = "/besc?action=KeepAlive&channel={channel}&type={deviceType}&noRefresh=Y&providerName={providerName}&serviceName={serviceName}&contentId="+str(content_id)
         response = self.send_request(url, self.BASE_URL_AVS)
-        return response != None
+        return response
 
     def set_seen(self, content_id, duration):
         return self.stop_content(content_id, duration, duration)

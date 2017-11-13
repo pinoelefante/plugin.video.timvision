@@ -1,6 +1,5 @@
 import threading
 import time
-from collections import deque
 from resources.lib import utils, Logger, TimVisionObjects
 import xbmc
 
@@ -17,15 +16,7 @@ class MyPlayer(xbmc.Player):
     is_paused = False
     keep_alive_limit = 600
     keep_alive_token = None
-
     last_time_end = 0
-
-    def __init__(self):
-        super(MyPlayer, self).__init__()
-        self.playlist = deque()
-
-    def enqueue(self, items):
-        self.playlist.extend(items)
 
     def setItem(self, url, content_id, start_point=0.0, content_type='', total_time=0):
         self.current_item = url
@@ -36,8 +27,10 @@ class MyPlayer(xbmc.Player):
         Logger.log_on_desktop_file("Setting item (%s - %s) Duration (%d/%d): %s" % (content_id, content_type, self.start_from, self.total_time, url), filename=Logger.LOG_PLAYER_FILE)
 
     def onPlayBackStarted(self):
-        self.listen = self.current_item == self.getPlayingFile()
+        playing_file = self.getPlayingFile()
+        self.listen = self.current_item == playing_file
         if not self.listen:
+            Logger.log_on_desktop_file("%s is not setted item", Logger.LOG_PLAYER_FILE)
             return
         if self.start_from >= 10:
             self.seekTime(float(self.start_from))
@@ -86,7 +79,7 @@ class MyPlayer(xbmc.Player):
             if self.isPlaying():
                 self.current_time = int(self.getTime())
                 Logger.log_on_desktop_file("Time: %d/%d" % (self.current_time, self.total_time), Logger.LOG_PLAYER_FILE)
-                if self.current_time > self.total_time: #happens at the beginning of the video
+                if self.current_time > self.total_time or self.current_time < 0: #happens at the beginning of the video
                     Logger.log_on_desktop_file("Invalid current_time", Logger.LOG_PLAYER_FILE)
                     continue
                 while to_resume:
