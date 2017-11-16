@@ -166,3 +166,24 @@ def start_webserver():
     tv_thread.start()
 
     return tv_server
+
+def get_view_id(name):
+    if name == "Lista":
+        return 50
+    elif name == "Poster":
+        return 51
+    elif name == "Muro di icone":
+        return 52
+    elif name == "Spostamento":
+        return 53
+    elif name == "Muro Info":
+        return 54
+    elif name == "Lista Larga":
+        return 55
+    elif name == "Muro":
+        return 500
+    elif name == "Banner":
+        return 501
+    elif name == "Fanart":
+        return 502
+    return 55

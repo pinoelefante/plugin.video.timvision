@@ -83,7 +83,7 @@ class MyPlayer(xbmc.Player):
                     Logger.log_on_desktop_file("Invalid current_time", Logger.LOG_PLAYER_FILE)
                     continue
                 while to_resume:
-                    Logger.log_on_desktop_file("Trying to resume")
+                    Logger.log_on_desktop_file("Trying to resume", Logger.LOG_PLAYER_FILE)
                     try:
                         Logger.log_on_desktop_file("Seek to %d" % (self.start_from), Logger.LOG_PLAYER_FILE)
                         self.seekTime(self.start_from)

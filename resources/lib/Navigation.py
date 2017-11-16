@@ -4,6 +4,12 @@ import xbmcgui
 import xbmcplugin
 from resources.lib import utils, Dialogs, TimVisionAPI, Logger, TimVisionObjects
 
+VIEW_MOVIES = "movies"
+VIEW_TVSHOWS = "tvshows"
+VIEW_SEASONS = "seasons"
+VIEW_EPISODES = "episodes"
+VIEW_FOLDERS = "folders"
+
 class Navigation(object):
     def __init__(self, handle, plugin):
         self.plugin_handle = handle
@@ -50,7 +56,7 @@ class Navigation(object):
                     id_stagione = params.get("id_stagione")
                     items = utils.call_service("get_show_content", {"contentId": id_stagione, "contentType":TimVisionAPI.TVSHOW_CONTENT_TYPE_EPISODES})
                     season_no = params.get("seasonNo")
-                    self.add_items_to_folder(items=items, is_episodes=True, title="Stagione %s" % (season_no))
+                    self.add_items_to_folder(items=items, title="Stagione %s" % (season_no))
                 elif action == "play_item":
                     content_id = params.get("contentId")
                     video_type = params.get("videoType")
@@ -134,7 +140,6 @@ class Navigation(object):
         xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=utils.url_join(self.plugin_dir, "?action=favourites"), isFolder=True, listitem=list_item)
         list_item = xbmcgui.ListItem(label="Cerca...")
         xbmcplugin.addDirectoryItem(handle=self.plugin_handle, url=utils.url_join(self.plugin_dir, "?action=search"), isFolder=True, listitem=list_item)
-
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
 
         if error:
@@ -154,32 +159,61 @@ class Navigation(object):
                 list_item = xbmcgui.ListItem(label=page["metadata"]["label"].lower().capitalize())
                 url = utils.url_join(self.plugin_dir, "?action=open_page&uri=%s" % (urllib.quote_plus(page["retrieveItems"]["uri"])))
                 xbmcplugin.addDirectoryItem(handle=self.plugin_handle, isFolder=True, listitem=list_item, url=url)
-
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
         return
 
-    def add_items_to_folder(self, items, is_episodes=False, title=''):
+    def add_items_to_folder(self, items, title=''):
         if len(items) == 0:
             Dialogs.show_dialog("Non sono presenti contenuti? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Elenco vuoto")
             xbmcplugin.endOfDirectory(handle=self.plugin_handle)
             return False
         items = TimVisionObjects.parse_collection(items)
+        movies = 0
+        tvshows = 0
+        episodes = 0
+        seasons = 0
         for item in items:
             list_item, is_folder, url = item.get_list_item()
             xbmcplugin.addDirectoryItem(handle=self.plugin_handle, isFolder=is_folder, listitem=list_item, url=utils.url_join(self.plugin_dir, url))
-
-        if is_episodes:
+            if item.mediatype == TimVisionObjects.ITEM_MOVIE:
+                movies+=1
+            elif item.mediatype == TimVisionObjects.ITEM_TVSHOW:
+                tvshows+=1
+            elif item.mediatype == TimVisionObjects.ITEM_SEASON:
+                seasons+=1
+            elif item.mediatype == TimVisionObjects.ITEM_EPISODE:
+                episodes+=1
+        
+        if episodes > 0:
             xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_EPISODE)
+            view_mode = VIEW_EPISODES
         else:
             xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_UNSORTED)
             xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
             xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
             xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
             xbmcplugin.addSortMethod(self.plugin_handle, xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
+            if movies > 0:
+                view_mode = VIEW_MOVIES
+            elif tvshows > 0:
+                view_mode = VIEW_TVSHOWS
+            elif  seasons > 0:
+                view_mode = VIEW_SEASONS
         if len(title) > 0:
             xbmcplugin.setPluginCategory(self.plugin_handle, title)
+        xbmcplugin.setContent(handle=self.plugin_handle, content=view_mode)
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
+        self.set_custom_view(view_mode)
         return True
+
+    def set_custom_view(self, content):
+        if utils.get_setting("custom_view_enabled"):
+            if utils.get_setting("custom_skin_enabled"):
+                view_id = utils.get_setting("view_skin_"+content)
+            else:
+                view = utils.get_setting('view_' + content)
+                view_id = utils.get_view_id(view)
+            xbmc.executebuiltin('Container.SetViewMode(%s)' % str(view_id))
 
     def play_trailer(self, content_id, trailer_type):
         url = None

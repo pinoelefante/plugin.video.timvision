@@ -1,3 +1,6 @@
+**v1.0.19 (2017-11-17)**
+- Viste personalizzate
+
 **v1.0.18 (2017-11-13)**
 - Invio richieste di KeepAlive durante la riproduzione
 - Il player non inviava richieste a TIMVISION (parziale #9)

@@ -2,8 +2,8 @@ Addon per kodi per vedere i contenuti di **TIMVision**
 
 **Requisiti**
 - Un account attivo su TIMVision
-- Kodi 17/18 Nightly Build
-- libreria widevinecdm
+- Kodi 17.4 o superiore
+- libreria widevinecdm (non richiesta per Android)
 
 **Download**
 

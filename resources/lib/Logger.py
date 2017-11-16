@@ -1,5 +1,6 @@
 import os
 import platform
+import time
 import xbmc
 
 LOG_TIMVISION_FILE = "timvision.log"
@@ -34,9 +35,10 @@ def log_on_desktop_file(msg, filename=LOG_TIMVISION_FILE):
             msg = msg.encode('utf-8')
         desktop = get_desktop_directory()
         filepath = os.path.join(desktop, filename)
-        f = open(filepath, "a")
-        f.writelines(msg + "\n")
-        f.close()
+        fd_file = open(filepath, "a")
+        cur_date = time.strftime("%d/%m/%Y %H:%M:%S")
+        fd_file.writelines("[%s] TIMVISION: %s\n" % (cur_date, msg))
+        fd_file.close()
 
 def kodi_log(msg, level=xbmc.LOGNOTICE):
     """
