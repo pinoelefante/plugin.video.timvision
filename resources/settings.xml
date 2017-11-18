@@ -33,6 +33,8 @@
     <setting id="logd_timvision" label="TimVision log" type="bool" value="true" default="true" enable="eq(-1,true)"/>
     <setting id="logd_player" label="Player log" type="bool" value="true" default="true" enable="eq(-2,true)"/>
     <setting id="logd_widevine" label="Widevine log" type="bool" value="true" default="true" enable="eq(-3,true)"/>
+    <setting type="sep"/>
+    <setting type="action" label="Cancella file di debug" action="RunPlugin(plugin://plugin.video.timvision/?action=delete_logs)"/>
     <!-- Hidden -->
     <setting id="timvision_service_port" value="8001" visible="false"/>
     <setting id="kodi_version_alert_shown" type="bool" value="false" default="false" visible="false"/>

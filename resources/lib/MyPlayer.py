@@ -27,10 +27,11 @@ class MyPlayer(xbmc.Player):
         Logger.log_on_desktop_file("Setting item (%s - %s) Duration (%d/%d): %s" % (content_id, content_type, self.start_from, self.total_time, url), filename=Logger.LOG_PLAYER_FILE)
 
     def onPlayBackStarted(self):
-        playing_file = self.getPlayingFile()
-        self.listen = self.current_item == playing_file
+        if self.current_item != None and self.isPlaying():
+            playing_file = self.getPlayingFile()
+            self.listen = self.current_item == playing_file
         if not self.listen:
-            Logger.log_on_desktop_file("%s is not setted item", Logger.LOG_PLAYER_FILE)
+            Logger.log_on_desktop_file("%s is not setted item" % (playing_file), Logger.LOG_PLAYER_FILE)
             return
         if self.start_from >= 10:
             self.seekTime(float(self.start_from))

@@ -47,3 +47,16 @@ def kodi_log(msg, level=xbmc.LOGNOTICE):
     if isinstance(msg, unicode):
         msg = msg.encode('utf-8')
     xbmc.log('[%s] %s' % ("TIMVISION", msg.__str__()), level)
+
+def delete_desktop_logs():
+    __delete_desktop_log(LOG_TIMVISION_FILE)
+    __delete_desktop_log(LOG_PLAYER_FILE)
+    __delete_desktop_log(LOG_WIDEVINE_FILE)
+
+def __delete_desktop_log(filename):
+    try:
+        desktop = get_desktop_directory()
+        filepath = os.path.join(desktop, filename)
+        os.remove(filepath)
+    except:
+        pass

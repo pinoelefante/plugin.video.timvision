@@ -98,6 +98,9 @@ class Navigation(object):
                 elif action == "favourites":
                     items = utils.call_service("get_favourite")
                     return self.add_items_to_folder(items)
+                elif action == "delete_logs":
+                    Logger.delete_desktop_logs()
+                    pass
 
     def verifica_login(self, count=0):
         logged = utils.call_service("is_logged")
