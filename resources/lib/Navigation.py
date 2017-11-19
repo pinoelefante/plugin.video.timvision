@@ -100,7 +100,6 @@ class Navigation(object):
                     return self.add_items_to_folder(items)
                 elif action == "delete_logs":
                     Logger.delete_desktop_logs()
-                    pass
 
     def verifica_login(self, count=0):
         logged = utils.call_service("is_logged")
@@ -202,6 +201,8 @@ class Navigation(object):
                 view_mode = VIEW_TVSHOWS
             elif  seasons > 0:
                 view_mode = VIEW_SEASONS
+            else:
+                view_mode = VIEW_FOLDERS
         if len(title) > 0:
             xbmcplugin.setPluginCategory(self.plugin_handle, title)
         xbmcplugin.setContent(handle=self.plugin_handle, content=view_mode)

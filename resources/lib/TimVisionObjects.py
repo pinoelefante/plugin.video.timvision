@@ -161,7 +161,8 @@ class TimVisionContent(TimVisionBaseObject):
 
     def create_context_menu(self, list_item):
         actions = []
-        is_fav = utils.call_service("is_favourite", {"contentId":self.content_id})
+        if self.mediatype in [ITEM_MOVIE, ITEM_TVSHOW]:
+            is_fav = utils.call_service("is_favourite", {"contentId":self.content_id})
         if self.mediatype == ITEM_MOVIE:
             actions.extend([("Play Trailer", "RunPlugin(plugin://"+PLUGIN_NAME+"/?action=play_trailer&contentId="+self.content_id+"&type=MOVIE)")])
             #actions.extend([("Gia' Visto", "RunPlugin("+self.plugin_dir+"?action=set_seen&contentId="+content_id+"&duration="+str(container["metadata"]["duration"])+")")])
