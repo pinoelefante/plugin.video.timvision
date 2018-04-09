@@ -2,6 +2,8 @@ import urllib
 import xbmc
 import xbmcgui
 import xbmcplugin
+import time
+import webbrowser
 from resources.lib import utils, Dialogs, TimVisionAPI, Logger, TimVisionObjects
 
 VIEW_MOVIES = "movies"
@@ -25,6 +27,7 @@ class Navigation(object):
         if params_count == 0:
             self.verify_version()
             self.create_main_page()
+            self.check_start()
         else:
             if params.has_key("page"):
                 page = params.get("page")
@@ -86,20 +89,24 @@ class Navigation(object):
                     mediatype = params.get("mediatype")
                     response = utils.call_service("set_favourite", {"contentId": content_id, "value": value, "mediatype":mediatype})
                     if response:
-                        Dialogs.show_message("Aggiunto ai preferiti" if value else "Rimosso dai preferiti", "Preferiti", xbmcgui.NOTIFICATION_INFO)
+                        dialog_title = utils.get_local_string(30033)
+                        dialog_msg = utils.get_local_string(30034) if value else utils.get_local_string(30035)
+                        Dialogs.show_message(dialog_msg, dialog_title, xbmcgui.NOTIFICATION_INFO)
                         xbmc.executebuiltin("Container.Refresh()")
                     else:
-                        Dialogs.show_dialog("Non e' stato possibile completare l'azione", "Errore")
+                        dialog_title = utils.get_local_string(30038)
+                        dialog_msg = utils.get_local_string(30039)
+                        Dialogs.show_dialog(dialog_msg, dialog_title)
                 elif action == "search":
-                    keyword = Dialogs.get_text_input("Keyword")
+                    keyword = Dialogs.get_text_input(utils.get_local_string(30032))
                     if keyword != None and len(keyword) > 0:
                         items = utils.call_service("search", {"keyword":keyword})
                         return self.add_items_to_folder(items)
                 elif action == "favourites":
                     items = utils.call_service("get_favourite")
                     return self.add_items_to_folder(items)
-                elif action == "delete_logs":
-                    Logger.delete_desktop_logs()
+                elif action == "donation":
+                    self.open_donation_page()
 
     def verifica_login(self, count=0):
         logged = utils.call_service("is_logged")
@@ -110,7 +117,7 @@ class Navigation(object):
                 logged = utils.call_service("login", {"username":email, "password":password})
             if not logged:
                 if count == 0:
-                    utils.set_setting("username", Dialogs.get_text_input("Email"))
+                    utils.set_setting("username", Dialogs.get_text_input(utils.get_local_string(30001)))
                     utils.set_setting("password", Dialogs.get_password_input())
                     return self.verifica_login(count+1)
         return logged
@@ -120,7 +127,9 @@ class Navigation(object):
         if major >= 18 or (major == 17 and minor >= 4):
             return True
         if not utils.get_setting("kodi_version_alert_shown") or force:
-            Dialogs.show_dialog("La riproduzione su questa versione di Kodi non e' supportata.\n\nRichiesto Kodi 17.4 o superiore", "Riproduzione non supportata")
+            dialog_title = utils.get_local_string(30040)
+            dialog_msg = utils.get_local_string(30041)
+            Dialogs.show_dialog(dialog_msg, dialog_title)
             utils.set_setting("kodi_version_alert_shown", "true")
         return False
 
@@ -145,7 +154,9 @@ class Navigation(object):
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
 
         if error:
-            Dialogs.show_dialog("Controlla di avere la connessione attiva. Se l'errore persiste, contatta lo sviluppatore del plugin", "Errore")
+            dialog_title = utils.get_local_string(30038)
+            dialog_msg = utils.get_local_string(30042)
+            Dialogs.show_dialog(dialog_msg, dialog_title)
 
     def create_category_page(self, page_id, ha_elenco=False, category_name=''):
         if ha_elenco:
@@ -166,7 +177,9 @@ class Navigation(object):
 
     def add_items_to_folder(self, items, title=''):
         if len(items) == 0:
-            Dialogs.show_dialog("Non sono presenti contenuti? Controlla su timvision.it e/o contatta lo sviluppatore del plugin", "Elenco vuoto")
+            dialog_title = utils.get_local_string(30043)
+            dialog_msg = utils.get_local_string(30044)
+            Dialogs.show_dialog(dialog_msg, dialog_title)
             xbmcplugin.endOfDirectory(handle=self.plugin_handle)
             return False
         items = TimVisionObjects.parse_collection(items)
@@ -216,7 +229,7 @@ class Navigation(object):
                 view_id = utils.get_setting("view_skin_"+content)
             else:
                 view = utils.get_setting('view_' + content)
-                view_id = utils.get_view_id(view)
+                view_id = self.get_view_id(view, content)
             xbmc.executebuiltin('Container.SetViewMode(%s)' % str(view_id))
 
     def play_trailer(self, content_id, trailer_type):
@@ -228,7 +241,9 @@ class Navigation(object):
         if url != None:
             self.play(url=url)
         else:
-            Dialogs.show_message("Il contenuto non ha un trailer", "Trailer assente")
+            dialog_title = utils.get_local_string(30036)
+            dialog_msg = utils.get_local_string(30037)
+            Dialogs.show_message(dialog_msg, dialog_title)
 
     def play_video(self, content_id, video_type, has_hd=False, start_offset=0.0, duration=0):
         if not self.verify_version(True):
@@ -236,7 +251,8 @@ class Navigation(object):
         license_info = utils.call_service("get_license_video", {"contentId": content_id, "videoType": video_type, "has_hd":has_hd})
         if license_info is None:
             #TODO try get ism manifest
-            Dialogs.show_dialog("Si e' verificato un errore o non e' possibile vedere il contenuto su questo dispositivo")
+            dialog_msg = utils.get_local_string(30045)
+            Dialogs.show_dialog(dialog_msg)
             return
         user_agent = utils.get_user_agent()
         headers = "%s&AVS_COOKIE=%s&Connection=keep-alive" % (user_agent, license_info["avs_cookie"])
@@ -247,11 +263,15 @@ class Navigation(object):
 
         if inputstream is None:
             Logger.kodi_log("inputstream.adaptive not found")
-            Dialogs.show_dialog("L'addon inputstream.adaptive non e' installato o e' disabilitato", "Addon non trovato")
+            dialog_title = utils.get_local_string(30046)
+            dialog_msg = utils.get_local_string(30047)
+            Dialogs.show_dialog(dialog_msg, dialog_title)
             return
         if not is_enabled:
             Logger.kodi_log("inputstream.adaptive addon not enabled")
-            Dialogs.show_dialog("L'addon inputstream.adaptive deve essere abilitato per poter visualizzare i contenuti", "Addon disabilitato")
+            dialog_title = utils.get_local_string(30049)
+            dialog_msg = utils.get_local_string(30048)
+            Dialogs.show_dialog(dialog_msg, dialog_title)
             return
 
         user_agent = utils.get_user_agent()
@@ -271,8 +291,9 @@ class Navigation(object):
             if start_offset >= 10 and duration-start_offset > 30:
                 if not utils.get_setting("always_resume"):
                     xbmc.executebuiltin("Dialog.Close(all, true)")
-                    message = "Vuoi riprendere la visione da [%s]?" % (utils.get_timestring_from_seconds(start_offset))
-                    start_offset = start_offset if Dialogs.ask(message, "Riprendi visione") else 0
+                    dialog_title = utils.get_local_string(30050)
+                    message = utils.get_local_string(30051) % (utils.get_timestring_from_seconds(start_offset))
+                    start_offset = start_offset if Dialogs.ask(message, dialog_title) else 0
             else:
                 start_offset = 0
             
@@ -280,3 +301,87 @@ class Navigation(object):
             xbmcplugin.setResolvedUrl(handle=self.plugin_handle, succeeded=True, listitem=play_item)
         else:
             xbmc.Player().play(item=url, listitem=play_item)
+    
+    def get_view_id(self, view_id, kind):
+        view_id = int(view_id)
+        if(kind == VIEW_MOVIES):
+            # 30016|30017|30018|30019|30020|30021|30022
+            if view_id == 0: #30016 - widelist
+                return 55
+            elif view_id == 1: #30017 iconwall
+                return 52
+            elif view_id == 2: #30018 fanart
+                return 502
+            elif view_id == 3: #19 list
+                return 50
+            elif view_id == 4: #20 poster
+                return 51
+            elif view_id == 5: #21 shift
+                return 53
+            elif view_id == 6: #22 infowall
+                return 54
+        elif (kind == VIEW_TVSHOWS):
+            if view_id == 0: #30016 - widelist
+                return 55
+            elif view_id == 1: #30017 iconwall
+                return 52
+            elif view_id == 2: #30018 fanart
+                return 502
+            elif view_id == 3: #19 list
+                return 50
+            elif view_id == 4: #20 poster
+                return 51
+            elif view_id == 5: #21 shift
+                return 53
+            elif view_id == 6: #22 infowall
+                return 54
+            elif view_id == 7: #23 banner
+                return 501
+        elif kind == VIEW_SEASONS:
+            if view_id == 0: #30016 - widelist
+                return 55
+            elif view_id == 1: #30017 iconwall
+                return 52
+            elif view_id == 2: #30018 fanart
+                return 502
+            elif view_id == 3: #19 list
+                return 50
+            elif view_id == 4: #20 poster
+                return 51
+            elif view_id == 5: #21 shift
+                return 53
+            elif view_id == 6: #22 infowall
+                return 54
+            elif view_id == 7: #31 wall
+                return 500
+        elif kind == VIEW_EPISODES:
+            if view_id == 0: #30016 - widelist
+                return 55
+            elif view_id == 1: #30017 iconwall
+                return 52
+        return 55
+    
+    def check_start(self):
+        start_count = int(utils.get_setting("timvision_start_count"))
+        last_time = long(utils.get_setting("timvision_start_last"))
+        cur_time = long(time.time())
+        if cur_time - last_time < 300:
+            return
+        if start_count == 0:
+            # first start
+            pass
+        
+        if start_count % 100 == 0:
+            if Dialogs.ask("Sembra tu stia utilizzando spesso l'addon. Vuoi fare una donazione?", "Donazione"):
+                self.open_donation_page()
+        
+        start_count = start_count + 1
+        utils.set_setting("timvision_start_count", str(start_count))
+        utils.set_setting("timvision_start_last", str(cur_time))
+    
+    def open_donation_page(self):
+        try:
+            webbrowser.open_new_tab("https://www.paypal.me/pinoelefante")
+        except:
+            Dialogs.show_dialog("https://www.paypal.me/pinoelefante")
+        pass

@@ -1,0 +1,250 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: plugin.video.timvision\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: pinoelefante <pinoelefante@hotmail.it>\n"
+"Language-Team: Italiano\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: it\n"
+"X-Generator: Poedit 2.0.6\n"
+
+# Kodi Media Center language file
+# Addon Name: TIMVISION
+# Addon id: plugin.video.timvision
+# Addon Provider: pinoelefante
+
+msgctxt "Addon Summary"
+msgid "Addon per TIMVISION"
+msgstr ""
+
+msgctxt "Addon Description"
+msgid "TIMVISION Video OnDemand Addon"
+msgstr ""
+
+msgctxt "Addon Disclaimer"
+msgid "Some parts of this addon may not be legal in your country of residence - please check with your local laws before installing."
+msgstr ""
+
+# Settings
+msgctxt "#30000"
+msgid "Account"
+msgstr ""
+
+msgctxt "#30001"
+msgid "Username"
+msgstr ""
+
+msgctxt "#30002"
+msgid "Password"
+msgstr ""
+
+msgctxt "#30003"
+msgid "Logout"
+msgstr ""
+
+msgctxt "#30004"
+msgid "Contents"
+msgstr "Contenuti"
+
+msgctxt "#30005"
+msgid "Expand shows with only one season"
+msgstr "Spiana le serie con un'unica stagione"
+
+msgctxt "#30006"
+msgid "Prefer HD"
+msgstr "Preferisci HD"
+
+msgctxt "#30007"
+msgid "Resume from the last point"
+msgstr "Riprendi dall'ultima posizione"
+
+msgctxt "#30008"
+msgid "Riproduci automaticamente l'episodio successivo"
+msgstr ""
+
+msgctxt "#30009"
+msgid "Views"
+msgstr "Viste"
+
+msgctxt "#30010"
+msgid "Enable custom views"
+msgstr "Abilita viste personalizzate"
+
+msgctxt "#30011"
+msgid "Movies"
+msgstr "Film"
+
+msgctxt "#30012"
+msgid "TV Shows"
+msgstr "Serie TV"
+
+msgctxt "#30013"
+msgid "Seasons"
+msgstr "Stagioni"
+
+msgctxt "#30014"
+msgid "Episodes"
+msgstr "Episodi"
+
+msgctxt "#30015"
+msgid "Custom skin (expert users)"
+msgstr "Skin personalizzate (utenti esperti)"
+
+msgctxt "#30016"
+msgid "WideList"
+msgstr "Lista Larga"
+
+msgctxt "#30017"
+msgid "IconWall"
+msgstr "Muro di icone"
+
+msgctxt "#30018"
+msgid "Fanart"
+msgstr "Fanart"
+
+msgctxt "#30019"
+msgid "List"
+msgstr "Lista"
+
+msgctxt "#30020"
+msgid "Poster"
+msgstr "Poster"
+
+msgctxt "#30021"
+msgid "Shift"
+msgstr "Spostamento"
+
+msgctxt "#30022"
+msgid "InfoWall"
+msgstr "Muro Info"
+
+msgctxt "#30023"
+msgid "Banner"
+msgstr "Banner"
+
+msgctxt "#30031"
+msgid "Wall"
+msgstr "Muro"
+
+msgctxt "#30024"
+msgid "Debug"
+msgstr ""
+
+msgctxt "#30025"
+msgid "Debug enabled"
+msgstr "Abilita debug"
+
+msgctxt "#30026"
+msgid "API Calls"
+msgstr "Chiamate API"
+
+msgctxt "#30027"
+msgid "TIMVISION"
+msgstr ""
+
+msgctxt "#30028"
+msgid "Player"
+msgstr "Lettore"
+
+msgctxt "#30029"
+msgid "Widevine"
+msgstr ""
+
+msgctxt "#30030"
+msgid "About"
+msgstr "Info"
+
+msgctxt "#30032"
+msgid "Keyword"
+msgstr ""
+
+msgctxt "#30033"
+msgid "Favourites"
+msgstr "Preferiti"
+
+msgctxt "#30034"
+msgid "Added to favourites"
+msgstr "Aggiunto ai preferiti"
+
+msgctxt "#30035"
+msgid "Removed from favourites"
+msgstr "Rimosso dai preferiti"
+
+msgctxt "#30036"
+msgid "Trailer not available"
+msgstr "Trailer non disponibile"
+
+msgctxt "#30037"
+msgid "This content has no trailer"
+msgstr "Questo contenuto non ha trailer"
+
+msgctxt "#30038"
+msgid "Error"
+msgstr "Errore"
+
+msgctxt "#30039"
+msgid "it was not possible complete the operation"
+msgstr "Non e' stato possibile completare l'operazione"
+
+msgctxt "#30040"
+msgid "Can't reproduce the video"
+msgstr "Riproduzione video non disponibile"
+
+msgctxt "#30041"
+msgid "To play contents is required Kodi 17.4 or above"
+msgstr "Per riprodurre i contenuti di TIMVISION e' necessario installere Kodi 17.4 o superiore"
+
+msgctxt "#30042"
+msgid "Check your internet connection. Contact the developer if the error persists"
+msgstr "Controlla la tua connessione internet. Se l'errore persiste, contattare lo sviluppatore"
+
+msgctxt "#30043"
+msgid "Empty list"
+msgstr "Lista vuota"
+
+msgctxt "#30044"
+msgid "There aren't contents in this list. Check timvision.it and/or contact the developer"
+msgstr "Non ci sono contenuti nella lista. Controlla su timvision.it e/o contatta lo sviluppatore"
+
+msgctxt "#30045"
+msgid "An error occurred or the content is not playable on this device"
+msgstr "Si e' verificato un errore o il contenuto non e' riproducibile su questo dispositivo"
+
+msgctxt "#30046"
+msgid "Addon not found"
+msgstr "Addon non trovato"
+
+msgctxt "#30047"
+msgid "InputStream Adaptive not installed or disabled"
+msgstr "InputStream Adaptive non installato o disabilitato"
+
+msgctxt "#30048"
+msgid "You have to enable InputStream Adaptive addon to reproduce contents"
+msgstr "E' necessario abilitare InputStream Adaptive per poter riprodurre i contenuti di TIMVISION"
+
+msgctxt "#30049"
+msgid "Addon disabled"
+msgstr "Addon disabilitato"
+
+msgctxt "#30050"
+msgid "Resume video"
+msgstr "Riprendi visione"
+
+msgctxt "#30051"
+msgid "Would you resume from [%s]?"
+msgstr "Vuoi riprendere la visione da [%s]?"
+
+msgctxt "#30052"
+msgid "Making this addon costs me a lot of time."
+msgstr "Sviluppare questo addon ha occupato molto del mio tempo."
+
+msgctxt "#30053"
+msgid "If you want, you can offer me a coffee"
+msgstr "Se vuoi, puoi offrirmi un caffe'"
+
+msgctxt "#30054"
+msgid "Make a donation"
+msgstr "Fai una donazione"

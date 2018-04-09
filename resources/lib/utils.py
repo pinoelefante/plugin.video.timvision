@@ -38,16 +38,15 @@ def call_service(method, params={}, try_time=1):
         params.update({"method":method})
         url_values = urllib.urlencode(params)
         full_url = get_service_url() + '?' + url_values
-        if get_setting("log_all_apicalls"):
-            Logger.kodi_log(full_url)
+        Logger.log_write(full_url, Logger.LOG_API)
         data = urllib2.urlopen(full_url).read()
         parsed_json = json.loads(data)
         result = parsed_json.get('result', None)
         return result
     except urllib2.URLError as error:
-        Logger.kodi_log("webserver error: %s" % (str(error.reason)))
+        Logger.log_write("webserver error: %s" % (str(error.reason)), Logger.LOG_API)
         if try_time == 5:
-            Logger.kodi_log("TryTime limit reach. Returning None")
+            Logger.log_write("TryTime limit reach. Returning None", Logger.LOG_API)
             return None
         start_webserver()
         call_service(method, params, try_time+1)
@@ -141,7 +140,7 @@ def load_pickle(pickle_file, default=None):
 def select_unused_port():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(('127.0.0.1', 0))
-    addr, port = sock.getsockname()
+    _, port = sock.getsockname()
     sock.close()
     return port
 
@@ -167,23 +166,8 @@ def start_webserver():
 
     return tv_server
 
-def get_view_id(name):
-    if name == "Lista":
-        return 50
-    elif name == "Poster":
-        return 51
-    elif name == "Muro di icone":
-        return 52
-    elif name == "Spostamento":
-        return 53
-    elif name == "Muro Info":
-        return 54
-    elif name == "Lista Larga":
-        return 55
-    elif name == "Muro":
-        return 500
-    elif name == "Banner":
-        return 501
-    elif name == "Fanart":
-        return 502
-    return 55
+def get_local_string(string_id):
+    locString = xbmcaddon.Addon().getLocalizedString(string_id)
+    if isinstance(locString, unicode):
+        locString = locString.encode('utf-8')
+    return locString

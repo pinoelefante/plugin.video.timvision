@@ -1,42 +1,49 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
-  <category label="Account">
-    <setting id="username" type="text" label="Username" default=""/>
-    <setting id="password" type="text" option="hidden" label="Password" default=""/>
+  <category label="30000">
+    <setting id="username" type="text" label="30001" default=""/>
+    <setting id="password" type="text" option="hidden" label="30002" default=""/>
     <setting type="sep"/>
     <!-- Actions -->
-    <setting id="logout" type="action" label="Logout" action="RunPlugin(plugin://plugin.video.timvision/?action=logout)" option="close"/>
+    <setting id="logout" type="action" label="30003" action="RunPlugin(plugin://plugin.video.timvision/?action=logout)" option="close"/>
   </category>
-  <category label="Contenuti">
-    <setting id="unique_season" type="bool" label="Spiana le serie con un'unica stagione" value="true" default="true"/>
-    <setting id="prefer_hd" type="bool" label="Preferisci HD" value="true" default="true"/>
-    <setting id="always_resume" type="bool" label="Riprendi sempre la visione" value="true" default="true"/>
-    <setting id="play_next_episode" type="bool" label="Riproduci automaticamente l'episodio successivo" value="true" default="true" visible="false" />
+  <category label="30004">
+    <setting id="unique_season" type="bool" label="30005" value="true" default="true"/>
+    <setting id="prefer_hd" type="bool" label="30006" value="true" default="true"/>
+    <setting id="always_resume" type="bool" label="30007" value="true" default="true"/>
+    <setting id="play_next_episode" type="bool" label="30008" value="true" default="true" visible="false" />
   </category>
-  <category label="Viste">
-    <setting id="custom_view_enabled" label="Abilita viste personalizzate" type="bool" value="false" default="false"/>
-    <setting id="view_movies" label="Vista film" type="select" values='Lista Larga|Muro|Fanart|Lista|Poster|Spostamento|Muro Info' default='Poster' enable="eq(-1,true)"/>
-    <setting id="view_tvshows" label="Vista serie" type="select" values='Lista Larga|Muro|Fanart|Lista|Poster|Spostamento|Muro Info|Banner' default='Banner' enable="eq(-2,true)"/>
-    <setting id="view_seasons" label="Vista stagioni" type="select" values='Lista Larga|Muro|Fanart|Lista|Poster|Spostamento|Muro Info' default='Lista Larga' enable="eq(-3,true)"/>
-    <setting id="view_episodes" label="Vista episodi" type="select" values='Lista Larga|Muro di icone' default='Lista Larga' enable="eq(-4,true)"/>
+  <category label="30009">
+    <setting id="custom_view_enabled" label="30010" type="bool" value="false" default="false"/>
+    <setting id="view_movies" label="30011" type="select" lvalues='30016|30017|30018|30019|30020|30021|30022' default='4' enable="eq(-1,true)"/>
+    <setting id="view_tvshows" label="30012" type="select" lvalues='30016|30017|30018|30019|30020|30021|30022|30023' default='7' enable="eq(-2,true)"/>
+    <setting id="view_seasons" label="30013" type="select" lvalues='30016|30017|30018|30019|30020|30021|30022|30031' default='0' enable="eq(-3,true)"/>
+    <setting id="view_episodes" label="30014" type="select" lvalues='30016|30017' default='0' enable="eq(-4,true)"/>
     <setting type="sep"/>
-    <setting id="custom_skin_enabled" label="Skin personalizzata (Utenti esperti)" type="bool" value="false" default="false" enable="eq(-6,true)"/>
-    <setting id="view_skin_movies" label="Vista film" type="number" value='55' default='55' enable="eq(-1,true)"/>
-    <setting id="view_skin_tvshows" label="Vista serie" type="number" value='55' default='55' enable="eq(-2,true)"/>
-    <setting id="view_skin_seasons" label="Vista stagioni" type="number" value='55' default='55' enable="eq(-3,true)"/>
-    <setting id="view_skin_episodes" label="Vista episodi" type="number" value='55' default='55' enable="eq(-4,true)"/>
+    <setting id="custom_skin_enabled" label="30015" type="bool" value="false" default="false" enable="eq(-6,true)"/>
+    <setting id="view_skin_movies" label="30011" type="number" value='55' default='55' enable="eq(-1,true)"/>
+    <setting id="view_skin_tvshows" label="30012" type="number" value='55' default='55' enable="eq(-2,true)"/>
+    <setting id="view_skin_seasons" label="30013" type="number" value='55' default='55' enable="eq(-3,true)"/>
+    <setting id="view_skin_episodes" label="30014" type="number" value='55' default='55' enable="eq(-4,true)"/>
   </category>
-  <category label="Debug">
-    <setting id="log_all_apicalls" label="Log api calls" type="bool" value="false" default="false"/>
-    <setting type="sep"/>
-    <setting id="abilita_log_desktop" label="Log file su desktop" type="bool" value="false" default="false"/>
-    <setting id="logd_timvision" label="TimVision log" type="bool" value="true" default="true" enable="eq(-1,true)"/>
-    <setting id="logd_player" label="Player log" type="bool" value="true" default="true" enable="eq(-2,true)"/>
-    <setting id="logd_widevine" label="Widevine log" type="bool" value="true" default="true" enable="eq(-3,true)"/>
-    <setting type="sep"/>
-    <setting type="action" label="Cancella file di debug" action="RunPlugin(plugin://plugin.video.timvision/?action=delete_logs)"/>
+  <category label="30024">
+    <setting id="debug_enable" label="30025" type="bool" value="false" default="false"/>
+    <setting id="log_all_apicalls" label="30026" type="bool" value="false" default="false" enable="eq(-1,true)"/>
+    <setting id="logd_timvision" label="30027" type="bool" value="true" default="true" enable="eq(-2,true)"/>
+    <setting id="logd_player" label="30028" type="bool" value="true" default="true" enable="eq(-3,true)"/>
+    <setting id="logd_widevine" label="30029" type="bool" value="true" default="true" enable="eq(-4,true)"/>
     <!-- Hidden -->
     <setting id="timvision_service_port" value="8001" visible="false"/>
     <setting id="kodi_version_alert_shown" type="bool" value="false" default="false" visible="false"/>
+    
+  </category>
+  <category label="30030">
+    <setting label="30052" type="text" enable="false" default=""/>
+    <setting label="30053" type="text" enable="false" default=""/>
+    <setting label="30054" type="action" action="RunPlugin(plugin://plugin.video.timvision/?action=donation)" option="close"/>
+    <!-- Hidden -->
+    <setting id="timvision_start_count" type="number" value="0" visible="false"/>
+    <setting id="timvision_start_last" type="number" value="0" visible="false"/>
+    <setting id="timvision_donation_count" type="number" value="0" default="0" visible="false"/>
   </category>
 </settings>

@@ -4,9 +4,9 @@ def get_text_input(label=""):
         dlg = xbmcgui.Dialog()
         return dlg.input(heading=label, type=xbmcgui.INPUT_ALPHANUM)
 
-def get_password_input(label="Password"):
+def get_password_input():
     dlg = xbmcgui.Dialog()
-    return dlg.input(heading=label, type=xbmcgui.INPUT_ALPHANUM, option=xbmcgui.ALPHANUM_HIDE_INPUT)
+    return dlg.input(heading="Password", type=xbmcgui.INPUT_ALPHANUM, option=xbmcgui.ALPHANUM_HIDE_INPUT)
 
 def show_message(message, title='', level=xbmcgui.NOTIFICATION_ERROR):
     dialog = xbmcgui.Dialog()

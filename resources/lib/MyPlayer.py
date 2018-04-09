@@ -24,19 +24,19 @@ class MyPlayer(xbmc.Player):
         self.start_from = start_point
         self.current_video_type = content_type
         self.total_time = int(total_time)
-        Logger.log_on_desktop_file("Setting item (%s - %s) Duration (%d/%d): %s" % (content_id, content_type, self.start_from, self.total_time, url), filename=Logger.LOG_PLAYER_FILE)
+        Logger.log_write("Setting item (%s - %s) Duration (%d/%d): %s" % (content_id, content_type, self.start_from, self.total_time, url), mode=Logger.LOG_PLAYER)
 
     def onPlayBackStarted(self):
         if self.current_item != None and self.isPlaying():
             playing_file = self.getPlayingFile()
             self.listen = self.current_item == playing_file
         if not self.listen:
-            Logger.log_on_desktop_file("%s is not setted item" % (playing_file), Logger.LOG_PLAYER_FILE)
+            Logger.log_write("%s is not setted item" % (playing_file), Logger.LOG_PLAYER)
             return
         if self.start_from >= 10:
             self.seekTime(float(self.start_from))
-        Logger.log_on_desktop_file("Listening ("+self.current_content_id+"): "+str(self.listen), filename=Logger.LOG_PLAYER_FILE)
-        Logger.log_on_desktop_file("Started ("+self.current_content_id+")", Logger.LOG_PLAYER_FILE)
+        Logger.log_write("Listening ("+self.current_content_id+"): "+str(self.listen), mode=Logger.LOG_PLAYER)
+        Logger.log_write("Started ("+self.current_content_id+")", Logger.LOG_PLAYER)
         self.send_keep_alive()
         self.playback_thread_stop_event = threading.Event()
         check_thread = threading.Thread(target=self.check_time)
@@ -49,56 +49,56 @@ class MyPlayer(xbmc.Player):
         #se e' una serie, mostrare il prossimo episodio
         if not self.listen:
             return
-        Logger.log_on_desktop_file("Ended ("+self.current_content_id+")", filename=Logger.LOG_PLAYER_FILE)
+        Logger.log_write("Ended ("+self.current_content_id+")", mode=Logger.LOG_PLAYER)
         self.playback_thread_stop_event.set()
 
     def onPlayBackPaused(self):
         if not self.listen:
             return
-        Logger.log_on_desktop_file("Paused ("+self.current_content_id+")", filename=Logger.LOG_PLAYER_FILE)
+        Logger.log_write("Paused ("+self.current_content_id+")", mode=Logger.LOG_PLAYER)
         utils.call_service("pause_content", {"contentId":self.current_content_id, "time":int(self.current_time), "threshold":int(self.threshold)})
         self.is_paused = True
 
     def onPlayBackStopped(self):
         if not self.listen:
             return
-        Logger.log_on_desktop_file("Stopped ("+self.current_content_id+")", filename=Logger.LOG_PLAYER_FILE)
+        Logger.log_write("Stopped ("+self.current_content_id+")", mode=Logger.LOG_PLAYER)
         self.playback_thread_stop_event.set()
 
     def onPlayBackResumed(self):
         if not self.listen:
             return
-        Logger.log_on_desktop_file("Resumed ("+self.current_content_id+")", filename=Logger.LOG_PLAYER_FILE)
+        Logger.log_write("Resumed ("+self.current_content_id+")", mode=Logger.LOG_PLAYER)
         self.is_paused = False
 
     def check_time(self):
         proposed = False
         to_resume = self.start_from >= 10
-        Logger.log_on_desktop_file("Is to resume: " + str(to_resume), Logger.LOG_PLAYER_FILE)
+        Logger.log_write("Is to resume: " + str(to_resume), Logger.LOG_PLAYER)
         time_elapsed = 0
         while not self.playback_thread_stop_event.isSet():
             if self.isPlaying():
                 self.current_time = int(self.getTime())
-                Logger.log_on_desktop_file("Time: %d/%d" % (self.current_time, self.total_time), Logger.LOG_PLAYER_FILE)
+                Logger.log_write("Time: %d/%d" % (self.current_time, self.total_time), Logger.LOG_PLAYER)
                 if self.current_time > self.total_time or self.current_time < 0: #happens at the beginning of the video
-                    Logger.log_on_desktop_file("Invalid current_time", Logger.LOG_PLAYER_FILE)
+                    Logger.log_write("Invalid current_time", Logger.LOG_PLAYER)
                     continue
                 while to_resume:
-                    Logger.log_on_desktop_file("Trying to resume", Logger.LOG_PLAYER_FILE)
+                    Logger.log_write("Trying to resume", Logger.LOG_PLAYER)
                     try:
-                        Logger.log_on_desktop_file("Seek to %d" % (self.start_from), Logger.LOG_PLAYER_FILE)
+                        Logger.log_write("Seek to %d" % (self.start_from), Logger.LOG_PLAYER)
                         self.seekTime(self.start_from)
                         if abs(self.getTime()-self.start_from) < 10:
                             to_resume = False
                     except:
-                        Logger.log_on_desktop_file("Error trying to seek")
+                        Logger.log_write("Error trying to seek", Logger.LOG_PLAYER)
                         xbmc.sleep(100)
                 remaining = self.total_time - self.current_time
                 if self.current_video_type == TimVisionObjects.ITEM_MOVIE and remaining <= 120 and not proposed:
-                    Logger.log_on_desktop_file("Proposing suggested movies", Logger.LOG_PLAYER_FILE)
+                    Logger.log_write("Proposing suggested movies", Logger.LOG_PLAYER)
                     proposed = True
                 elif self.current_video_type == TimVisionObjects.ITEM_EPISODE and remaining <= 30 and not proposed and utils.get_setting("play_next_episode"):
-                    Logger.log_on_desktop_file("Proposing next episode", Logger.LOG_PLAYER_FILE)
+                    Logger.log_write("Proposing next episode", Logger.LOG_PLAYER)
                     proposed = True
             self.playback_thread_stop_event.wait(5)
             time_elapsed += 5
@@ -107,7 +107,7 @@ class MyPlayer(xbmc.Player):
         
         # out of while
         complete_percentage = self.current_time * 100.0 / self.total_time
-        Logger.log_on_desktop_file("Stopping (%s) - %.3f%%" % (self.current_content_id, complete_percentage), Logger.LOG_PLAYER_FILE)
+        Logger.log_write("Stopping (%s) - %.3f%%" % (self.current_content_id, complete_percentage), Logger.LOG_PLAYER)
         if complete_percentage >= 97.5:
             utils.call_service("set_content_seen", {"contentId":self.current_content_id, "duration": int(self.total_time)})
         elif self.current_time > 10:
@@ -133,11 +133,11 @@ class MyPlayer(xbmc.Player):
     def send_keep_alive(self):
         ka_resp = utils.call_service("keep_alive", {"contentId": self.current_content_id})
         if ka_resp != None:
-            Logger.log_on_desktop_file("Keep Alive OK!", Logger.LOG_PLAYER_FILE)
+            Logger.log_write("Keep Alive OK!", Logger.LOG_PLAYER)
             self.keep_alive_limit = int(ka_resp["resultObj"]["keepAlive"])
             self.keep_alive_token = ka_resp["resultObj"]["token"]
             return True
-        Logger.log_on_desktop_file("Keep Alive FAILED!", Logger.LOG_PLAYER_FILE)
+        Logger.log_write("Keep Alive FAILED!", Logger.LOG_PLAYER)
         return False
 
     def reset_player(self):

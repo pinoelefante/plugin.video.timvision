@@ -117,14 +117,14 @@ class TimVisionSession(object):
             url = utils.url_join(base_url, url)
         url = self.__compile_url(url)
 
-        Logger.log_on_desktop_file("Sending "+method+" request to "+url)
+        Logger.log_write("Sending "+method+" request to "+url, Logger.LOG_TIMVISION)
         response = self.api_endpoint.get(url, params=data) if method == "GET" else self.api_endpoint.post(url, data=data)
-        Logger.log_on_desktop_file("Status Code: "+str(response.status_code))
+        Logger.log_write("Status Code: "+str(response.status_code), Logger.LOG_TIMVISION)
         if response.status_code == 200:
             data = response.json()
-            Logger.log_on_desktop_file(msg=("Response: "+response.text))
+            Logger.log_write("Response: "+response.text, Logger.LOG_TIMVISION)
             if isinstance(data, list):
-                Logger.log_on_desktop_file("JSON result is an array")
+                Logger.log_write("JSON result is an array", Logger.LOG_TIMVISION)
                 data = data[0]
             if data["resultCode"] == "OK":
                 return data
@@ -304,11 +304,11 @@ class TimVisionSession(object):
 
     def get_widevine_response(self, widevine_request, widevine_url):
         for _ in range(0, 3):
-            Logger.log_on_desktop_file("Trying to get widevine license", filename=Logger.LOG_WIDEVINE_FILE)
+            Logger.log_write("Trying to get widevine license", mode=Logger.LOG_WIDEVINE)
             resp = self.license_endpoint.post(widevine_url, data=widevine_request)
-            Logger.log_on_desktop_file("Status code: "+str(resp.status_code), filename=Logger.LOG_WIDEVINE_FILE)
+            Logger.log_write("Status code: "+str(resp.status_code), mode=Logger.LOG_WIDEVINE)
             if resp.status_code == 200:
-                Logger.log_on_desktop_file("We get it! WOW", filename=Logger.LOG_WIDEVINE_FILE)
+                Logger.log_write("We get it! WOW", mode=Logger.LOG_WIDEVINE)
                 return resp.content
         return None
 
