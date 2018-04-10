@@ -5,6 +5,7 @@ import xbmcplugin
 import time
 import webbrowser
 from resources.lib import utils, Dialogs, TimVisionAPI, Logger, TimVisionObjects
+from resources.lib import TimVisionLibrary
 
 VIEW_MOVIES = "movies"
 VIEW_TVSHOWS = "tvshows"
@@ -107,6 +108,9 @@ class Navigation(object):
                     return self.add_items_to_folder(items)
                 elif action == "donation":
                     self.open_donation_page()
+                elif action == "library":
+                    library = TimVisionLibrary.TimVisionLibrary()
+                    library.update()
 
     def verifica_login(self, count=0):
         logged = utils.call_service("is_logged")
@@ -365,11 +369,12 @@ class Navigation(object):
         start_count = int(utils.get_setting("timvision_start_count"))
         last_time = long(utils.get_setting("timvision_start_last"))
         cur_time = long(time.time())
+        
+        if start_count == 0:
+            self.first_start()
+
         if cur_time - last_time < 300:
             return
-        if start_count == 0:
-            # first start
-            pass
         
         if start_count % 100 == 0:
             if Dialogs.ask("Sembra tu stia utilizzando spesso l'addon. Vuoi fare una donazione?", "Donazione"):
@@ -384,4 +389,7 @@ class Navigation(object):
             webbrowser.open_new_tab("https://www.paypal.me/pinoelefante")
         except:
             Dialogs.show_dialog("https://www.paypal.me/pinoelefante")
+        pass
+    
+    def first_start(self):
         pass

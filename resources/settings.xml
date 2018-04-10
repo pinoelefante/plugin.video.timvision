@@ -13,6 +13,15 @@
     <setting id="always_resume" type="bool" label="30007" value="true" default="true"/>
     <setting id="play_next_episode" type="bool" label="30008" value="true" default="true" visible="false" />
   </category>
+  <category label="Libreria">
+    <setting id="lib_export_enabled" label="Abilita libreria" type="bool" value="false" default="false"/>
+    <setting id="lib_export_folder" label="Cartella esportazione" type="folder" value="" default="" option="writeable" source="video"/>
+    <setting id="lib_export_movie" label="Esporta film" type="bool" value="true" default="true" enable="eq(-2,true)"/>
+    <setting id="lib_export_tvshow" label="Esporta serie tv" type="bool" value="false" default="false" enable="eq(-3,true)"/>
+    <setting id="lib_export_check_days" label="Aggiorna ogni (giorni)" type="number" value="7" default="7" enable="eq(-4,true)"/>
+    <setting id="lib_export_now" type="action" label="Crea libreria" action="RunPlugin(plugin://plugin.video.timvision/?action=library)" option="close" enable="eq(-5,true)"/>
+    <setting id="lib_export_last_check" type="number" value="0" default="0" visible="false"/>
+  </category>
   <category label="30009">
     <setting id="custom_view_enabled" label="30010" type="bool" value="false" default="false"/>
     <setting id="view_movies" label="30011" type="select" lvalues='30016|30017|30018|30019|30020|30021|30022' default='4' enable="eq(-1,true)"/>
