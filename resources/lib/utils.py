@@ -93,6 +93,16 @@ def get_kodi_version():
     minor = int(data["result"]["version"]["minor"])
     return major, minor
 
+def get_json_rpc_call(method_name, parameters=None):
+    payload = {
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': method_name,
+        'params': [parameters] if parameters!=None else []
+    }
+    response = xbmc.executeJSONRPC(json.dumps(payload))
+    return json.loads(response)
+
 def list_to_string(mylist, separator=', '):
     if mylist is None:
         return ""
