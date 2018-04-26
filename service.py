@@ -1,19 +1,24 @@
 import xbmc
-from resources.lib import utils
+from resources.lib import utils, TimVisionLibrary
 
-utils.set_setting("kodi_version_alert_shown", "false")
-TV_SERVER = utils.start_webserver()
+class TimVisionService(object):
+    def __init__(self):
+        self.timvision_server = utils.start_webserver()
+        self.library = TimVisionLibrary.TimVisionLibrary()
+
+    def run(self):
+        monitor = xbmc.Monitor()
+        while not monitor.abortRequested():
+            self.library.update()
+            if monitor.waitForAbort(5):
+                self.shutdown()
+                break
+    
+    def shutdown(self):
+        self.timvision_server.shutdown()
+        self.timvision_server.server_close()
+        self.timvision_server.socket.close()
 
 if __name__ == "__main__":
-    MONITOR = xbmc.Monitor()
-
-    # kill the services if kodi monitor tells us to
-    while not MONITOR.abortRequested():
-        if MONITOR.waitForAbort(5):
-            TV_SERVER.shutdown()
-            break
-
-    # webserver shutdown sequence
-    TV_SERVER.server_close()
-    TV_SERVER.socket.close()
-    TV_SERVER.shutdown()
+    utils.set_setting("kodi_version_alert_shown", "false")
+    TimVisionService().run()

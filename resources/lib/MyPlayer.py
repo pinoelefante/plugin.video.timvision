@@ -18,12 +18,13 @@ class MyPlayer(xbmc.Player):
     keep_alive_token = None
     last_time_end = 0
 
-    def setItem(self, url, content_id, start_point=0.0, content_type='', total_time=0):
+    def setItem(self, url, content_id, start_point=0.0, content_type='', total_time=0, paused=False):
         self.current_item = url
         self.current_content_id = content_id
         self.start_from = start_point
         self.current_video_type = content_type
         self.total_time = int(total_time)
+        self.start_paused = paused
         Logger.log_write("Setting item (%s - %s) Duration (%d/%d): %s" % (content_id, content_type, self.start_from, self.total_time, url), mode=Logger.LOG_PLAYER)
 
     def onPlayBackStarted(self):
@@ -43,10 +44,11 @@ class MyPlayer(xbmc.Player):
         check_thread.start()
         threshold_thread = threading.Thread(target=self.threshold_calculation)
         threshold_thread.start()
+        if self.start_paused:
+            self.start_paused = False
+            self.pause()
 
     def onPlayBackEnded(self):
-        #video terminato
-        #se e' una serie, mostrare il prossimo episodio
         if not self.listen:
             return
         Logger.log_write("Ended ("+self.current_content_id+")", mode=Logger.LOG_PLAYER)
@@ -70,38 +72,30 @@ class MyPlayer(xbmc.Player):
             return
         Logger.log_write("Resumed ("+self.current_content_id+")", mode=Logger.LOG_PLAYER)
         self.is_paused = False
+    
+    def onCorrectTimeLoaded(self):
+        if self.start_paused:
+            while not self.is_paused:
+                self.pause()
+                xbmc.sleep(1000)
+        
+        while abs(self.getTime()-self.start_from) > 10:
+            Logger.log_write("Trying to resume: %f" % (self.start_from), Logger.LOG_PLAYER)
+            self.seekTime(self.start_from)
+            xbmc.sleep(100)
 
     def check_time(self):
-        proposed = False
-        to_resume = self.start_from >= 10
-        Logger.log_write("Is to resume: " + str(to_resume), Logger.LOG_PLAYER)
         time_elapsed = 0
+        self.current_time = int(self.getTime())
+        while self.current_time > self.total_time or self.current_time < 0:
+            xbmc.sleep(200)
+        self.onCorrectTimeLoaded()
+        
         while not self.playback_thread_stop_event.isSet():
-            if self.isPlaying():
-                self.current_time = int(self.getTime())
-                Logger.log_write("Time: %d/%d" % (self.current_time, self.total_time), Logger.LOG_PLAYER)
-                if self.current_time > self.total_time or self.current_time < 0: #happens at the beginning of the video
-                    Logger.log_write("Invalid current_time", Logger.LOG_PLAYER)
-                    continue
-                while to_resume:
-                    Logger.log_write("Trying to resume", Logger.LOG_PLAYER)
-                    try:
-                        Logger.log_write("Seek to %d" % (self.start_from), Logger.LOG_PLAYER)
-                        self.seekTime(self.start_from)
-                        if abs(self.getTime()-self.start_from) < 10:
-                            to_resume = False
-                    except:
-                        Logger.log_write("Error trying to seek", Logger.LOG_PLAYER)
-                        xbmc.sleep(100)
-                remaining = self.total_time - self.current_time
-                if self.current_video_type == TimVisionObjects.ITEM_MOVIE and remaining <= 120 and not proposed:
-                    Logger.log_write("Proposing suggested movies", Logger.LOG_PLAYER)
-                    proposed = True
-                elif self.current_video_type == TimVisionObjects.ITEM_EPISODE and remaining <= 30 and not proposed and utils.get_setting("play_next_episode"):
-                    Logger.log_write("Proposing next episode", Logger.LOG_PLAYER)
-                    proposed = True
-            self.playback_thread_stop_event.wait(5)
-            time_elapsed += 5
+            # keep live check
+            self.current_time = int(self.getTime())
+            self.playback_thread_stop_event.wait(2)
+            time_elapsed += 2
             if time_elapsed >= self.keep_alive_limit and self.send_keep_alive():
                 time_elapsed = 0
         
@@ -152,3 +146,4 @@ class MyPlayer(xbmc.Player):
         self.is_paused = False
         self.keep_alive_token = None
         self.keep_alive_limit = 600
+        self.start_paused = False

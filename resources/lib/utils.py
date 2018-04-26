@@ -155,7 +155,7 @@ def select_unused_port():
     return port
 
 def start_webserver():
-    Logger.kodi_log("Starting webserver")
+    Logger.kodi_log("Starting TIMVISION addon")
     
     # pick & store a port for the internal TimVision HTTP proxy service
     tv_port = select_unused_port()

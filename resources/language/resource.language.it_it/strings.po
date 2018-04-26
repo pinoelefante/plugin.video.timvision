@@ -248,3 +248,51 @@ msgstr "Se vuoi, puoi offrirmi un caffe'"
 msgctxt "#30054"
 msgid "Make a donation"
 msgstr "Fai una donazione"
+
+msgctxt "#30055"
+msgid "Library"
+msgstr "Libreria"
+
+msgctxt "#30056"
+msgid "Enable library"
+msgstr "Abilita libreria"
+
+msgctxt "#30057"
+msgid "Export folder"
+msgstr "Cartella di salvataggio"
+
+msgctxt "#30058"
+msgid "Export movies"
+msgstr "Esporta film"
+
+msgctxt "#30059"
+msgid "Export tv shows"
+msgstr "Esporta serie tv"
+
+msgctxt "#30060"
+msgid "Add to KODI's library"
+msgstr "Aggiungi alla libreria di KODI"
+
+msgctxt "#30061"
+msgid "NOTICE: to see the TIMVISION's video sources, you need to restart KODI"
+msgstr "ATTENZIONE: per poter vedere le fonti video di TIMVISION, bisogna riavviare KODI (solo la prima volta)"
+
+msgctxt "#30062"
+msgid "Donation prompt enable"
+msgstr "Mostra richiesta donazioni"
+
+msgctxt "#30063"
+msgid "It is not possible play videos on this device"
+msgstr "Non e' possibile riprodurre contenuti su questo dispositivo"
+
+msgctxt "#30064"
+msgid "Donation"
+msgstr "Donazione"
+
+msgctxt "#30065"
+msgid "It seems you are often using the addon. Do you want to make a donation?"
+msgstr "Sembra tu stia utilizzando spesso l'addon. Vorresti fare una donazione?"
+
+msgctxt "#30066"
+msgid "Verify KODI library"
+msgstr "Verifica libreria KODI"

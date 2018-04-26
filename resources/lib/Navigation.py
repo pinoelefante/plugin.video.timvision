@@ -6,6 +6,7 @@ import time
 import webbrowser
 from resources.lib import utils, Dialogs, TimVisionAPI, Logger, TimVisionObjects
 from resources.lib import TimVisionLibrary
+import inputstreamhelper
 
 VIEW_MOVIES = "movies"
 VIEW_TVSHOWS = "tvshows"
@@ -28,7 +29,6 @@ class Navigation(object):
         if params_count == 0:
             self.verify_version()
             self.create_main_page()
-            self.check_start()
         else:
             if params.has_key("page"):
                 page = params.get("page")
@@ -67,7 +67,8 @@ class Navigation(object):
                     has_hd = params.get("has_hd", "false")
                     start_offset = params.get("startPoint")
                     duration = params.get("duration")
-                    self.play_video(content_id, video_type, has_hd, start_offset, duration)
+                    paused = self.increase_play_video_count()
+                    self.play_video(content_id, video_type, has_hd, start_offset, duration, paused)
                 elif action == "open_page":
                     uri = urllib.unquote_plus(params.get("uri")).replace("maxResults=30", "maxResults=50").replace("&addSeeMore=50", "")
                     items = utils.call_service("get_contents", {"url": uri})
@@ -110,7 +111,11 @@ class Navigation(object):
                     self.open_donation_page()
                 elif action == "library":
                     library = TimVisionLibrary.TimVisionLibrary()
-                    library.update()
+                    library.update(force=True)
+                elif action == "library_kodi":
+                    library = TimVisionLibrary.TimVisionLibrary()
+                    library.check_db_integrity()
+                    pass
 
     def verifica_login(self, count=0):
         logged = utils.call_service("is_logged")
@@ -249,59 +254,50 @@ class Navigation(object):
             dialog_msg = utils.get_local_string(30037)
             Dialogs.show_message(dialog_msg, dialog_title)
 
-    def play_video(self, content_id, video_type, has_hd=False, start_offset=0.0, duration=0):
+    def play_video(self, content_id, video_type, has_hd=False, start_offset=0.0, duration=0, paused=False):
         if not self.verify_version(True):
             return
         license_info = utils.call_service("get_license_video", {"contentId": content_id, "videoType": video_type, "has_hd":has_hd})
         if license_info is None:
-            #TODO try get ism manifest
             dialog_msg = utils.get_local_string(30045)
             Dialogs.show_dialog(dialog_msg)
             return
         user_agent = utils.get_user_agent()
         headers = "%s&AVS_COOKIE=%s&Connection=keep-alive" % (user_agent, license_info["avs_cookie"])
-        self.play(content_id, license_info["mpd_file"], license_info["widevine_url"], headers, start_offset, video_type, duration)
+        self.play(content_id, license_info["mpd_file"], license_info["widevine_url"], headers, start_offset, video_type, duration, paused)
 
-    def play(self, content_id=None, url=None, license_key=None, license_headers="", start_offset=0.0, content_type='', duration=0):
-        inputstream, is_enabled = utils.get_addon('inputstream.adaptive')
-
-        if inputstream is None:
-            Logger.kodi_log("inputstream.adaptive not found")
-            dialog_title = utils.get_local_string(30046)
-            dialog_msg = utils.get_local_string(30047)
-            Dialogs.show_dialog(dialog_msg, dialog_title)
-            return
-        if not is_enabled:
-            Logger.kodi_log("inputstream.adaptive addon not enabled")
-            dialog_title = utils.get_local_string(30049)
-            dialog_msg = utils.get_local_string(30048)
-            Dialogs.show_dialog(dialog_msg, dialog_title)
-            return
-
+    def play(self, content_id=None, url=None, license_key=None, license_headers="", start_offset=0.0, content_type='', duration=0, start_paused=False):
+        PROTOCOL = 'mpd'
+        DRM = 'com.widevine.alpha'
         user_agent = utils.get_user_agent()
+
         play_item = xbmcgui.ListItem(path=url)
         play_item.setContentLookup(False)
         play_item.setMimeType('application/dash+xml')
-        play_item.setProperty(inputstream + '.stream_headers', "%s&Connection=keep-alive" % (user_agent))
-        play_item.setProperty(inputstream + '.manifest_type', 'mpd')
         play_item.setProperty('inputstreamaddon', "inputstream.adaptive")
-
+        play_item.setProperty('inputstream.adaptive.stream_headers', "%s&Connection=keep-alive" % (user_agent))
+        play_item.setProperty('inputstream.adaptive.manifest_type', PROTOCOL)
+        
         if license_key != None:
-            play_item.setProperty(inputstream + '.license_type', 'com.widevine.alpha')
-            play_item.setProperty(inputstream + '.license_key', license_key+'|'+license_headers+'|R{SSM}|')
+            is_helper = inputstreamhelper.Helper(PROTOCOL, drm=DRM)
+            if not is_helper.check_inputstream():
+                Dialogs.show_dialog(utils.get_local_string(30063))
+                return
+            play_item.setProperty('inputstream.adaptive.license_type', DRM)
+            play_item.setProperty('inputstream.adaptive.license_key', license_key+'|'+license_headers+'|R{SSM}|')
             
             start_offset = int(start_offset)
             duration = int(duration)
             if start_offset >= 10 and duration-start_offset > 30:
                 if not utils.get_setting("always_resume"):
-                    xbmc.executebuiltin("Dialog.Close(all, true)")
+                    xbmc.executebuiltin("Dialog.Close(all,true)")
                     dialog_title = utils.get_local_string(30050)
                     message = utils.get_local_string(30051) % (utils.get_timestring_from_seconds(start_offset))
                     start_offset = start_offset if Dialogs.ask(message, dialog_title) else 0
             else:
                 start_offset = 0
             
-            utils.call_service("set_playing_item", {"url":url, "contentId":content_id, "time":start_offset, "videoType":content_type, "duration":duration})
+            utils.call_service("set_playing_item", {"url":url, "contentId":content_id, "time":start_offset, "videoType":content_type, "duration":duration, "paused":start_paused})
             xbmcplugin.setResolvedUrl(handle=self.plugin_handle, succeeded=True, listitem=play_item)
         else:
             xbmc.Player().play(item=url, listitem=play_item)
@@ -365,31 +361,25 @@ class Navigation(object):
                 return 52
         return 55
     
-    def check_start(self):
-        start_count = int(utils.get_setting("timvision_start_count"))
-        last_time = long(utils.get_setting("timvision_start_last"))
-        cur_time = long(time.time())
+    def increase_play_video_count(self):
+        show_donation_enabled = utils.get_setting("timvision_show_donation")
+        play_video_count = int(utils.get_setting("timvision_start_count"))
+        pause_video = False
+        if show_donation_enabled:
+            if play_video_count > 0 and play_video_count % 100 == 0:
+                dialog_title = utils.get_local_string(30064)
+                dialog_message = utils.get_local_string(30065)
+                if Dialogs.ask(dialog_message, dialog_title):
+                    pause_video = self.open_donation_page()
         
-        if start_count == 0:
-            self.first_start()
-
-        if cur_time - last_time < 300:
-            return
-        
-        if start_count % 100 == 0:
-            if Dialogs.ask("Sembra tu stia utilizzando spesso l'addon. Vuoi fare una donazione?", "Donazione"):
-                self.open_donation_page()
-        
-        start_count = start_count + 1
-        utils.set_setting("timvision_start_count", str(start_count))
-        utils.set_setting("timvision_start_last", str(cur_time))
+        play_video_count = play_video_count + 1
+        utils.set_setting("timvision_start_count", str(play_video_count))
+        return pause_video
     
     def open_donation_page(self):
         try:
             webbrowser.open_new_tab("https://www.paypal.me/pinoelefante")
+            return True
         except:
             Dialogs.show_dialog("https://www.paypal.me/pinoelefante")
-        pass
-    
-    def first_start(self):
-        pass
+            return False

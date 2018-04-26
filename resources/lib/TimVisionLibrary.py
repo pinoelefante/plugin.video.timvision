@@ -4,6 +4,7 @@ from resources.lib import utils, TimVisionObjects, Logger, Dialogs, TimVisionAPI
 import xbmc, xbmcvfs, xbmcgui
 import xmltodict
 import sqlite3
+import time
 
 invalidFilenameChars = "<>:\"/\\|/?*"
 default_sources_xml = {"sources":{"programs":{"default":{"@pathversion":"1"}},"video":{"default":{"@pathversion":"1"}},"music":{"default":{"@pathversion":"1"}},"pictures":{"default":{"@pathversion":"1"}},"files":{"default":{"@pathversion":"1"}},"games":{"default":{"@pathversion":"1"}}}}
@@ -20,6 +21,7 @@ class TimVisionLibrary(object):
             utils.set_setting("lib_export_folder", custom_path)
         self.library_folder = os.path.join(custom_path, "timvision_library")
         self.init_library_folders()
+        utils.set_setting("lib_export_updating", "false")
 
     def init_library_folders(self):
         self.__create_folder(self.library_folder, self.movies_folder)
@@ -55,6 +57,9 @@ class TimVisionLibrary(object):
 
     def __run_cleanup(self):
         xbmc.executebuiltin("CleanLibrary(video)")
+    
+    def __run_update_library(self):
+        xbmc.executebuiltin("UpdateLibrary(video)")
     
     def __add_folder_to_sources(self, label):
         path = os.path.join(self.library_folder, label)
@@ -92,24 +97,81 @@ class TimVisionLibrary(object):
         xmltodict.unparse(sources_xml, xml_file)
         xml_file.close()
         
-    def update(self):
-        if not utils.get_setting("lib_export_enabled"):
+    TIME_BETWEEN_UPDATE = 604800 # 7 days
+    def update(self, force=False):
+        is_updating = utils.get_setting("lib_export_updating")
+        if not utils.get_setting("lib_export_enabled") or is_updating:
             return
-        if utils.get_setting("lib_export_movie"):
+        utils.set_setting("lib_export_updating", "true")
+        update_kodi_library = False
+        time_now = int(time.time())
+        last_update_movies = int(utils.get_setting("lib_export_last_update_movies"))
+        if utils.get_setting("lib_export_movies") and (force or time_now-self.TIME_BETWEEN_UPDATE > last_update_movies):
+            Logger.kodi_log("Updating movies library")
+            utils.set_setting("lib_export_last_update_movies", str(time_now))
             self.__update_movies_library()
             self.__add_folder_to_sources(self.movies_folder)
             self.__insert_folder_database(self.movies_folder)
+            update_kodi_library = True
 
-        if utils.get_setting("lib_export_tvshow"):
+        last_update_tvshows = int(utils.get_setting("lib_export_last_update_tvshows"))
+        if utils.get_setting("lib_export_tvshows") and (force or time_now-self.TIME_BETWEEN_UPDATE > last_update_tvshows):
+            Logger.kodi_log("Updating tvshows library")
+            utils.set_setting("lib_export_last_update_tvshows", str(time_now))
             self.__update_tvshows_library()
             self.__add_folder_to_sources(self.tvshows_folder)
             self.__insert_folder_database(self.tvshows_folder)
+            update_kodi_library = True
         
-        xbmc.executebuiltin('Action(ReloadSources)')
-        xbmc.executebuiltin("UpdateLibrary(video)")
-        #self.__run_cleanup()
-        
-        Dialogs.show_message("Libraria aggiornata", "TIMVISION", xbmcgui.NOTIFICATION_INFO)
+        if update_kodi_library:
+            #xbmc.executebuiltin('Action(reloadsources)')
+            self.__run_update_library()
+            Logger.kodi_log("Libreria in aggiornamento")
+
+        utils.set_setting("lib_export_updating", "false")
+
+    def check_db_integrity(self):
+        library_enable = utils.get_setting("lib_export_enabled")
+        kodi_export = utils.get_setting("lib_export_kodi_library")
+        if not library_enable or not kodi_export:
+            self.__remove_folder_database(self.movies_folder)
+            self.__remove_folder_database(self.tvshows_folder)
+            return
+
+        movies_enabled = utils.get_setting("lib_export_movies")
+        tvshows_enabled = utils.get_setting("lib_export_tvshows")
+        if library_enable and kodi_export:
+            # movies
+            movies_db, movies_path_id = self.__check_database(self.movies_folder)
+            if movies_enabled and not movies_db:
+                self.__insert_folder_database(self.movies_folder)
+            elif not movies_enabled and movies_db:
+                self.__remove_folder_database_by_path_id(movies_path_id)
+
+            # tvshows
+            tvshows_db, tvshows_path_id = self.__check_database(self.tvshows_folder)
+            if tvshows_enabled and not tvshows_db:
+                self.__insert_folder_database(self.tvshows_folder)
+            elif not tvshows_enabled and tvshows_db:
+                self.__remove_folder_database_by_path_id(tvshows_path_id)
+        self.__run_update_library()
+        self.__run_cleanup()
+
+    def __remove_folder_database_by_path_id(self, path_id):
+        Logger.kodi_log("Removing path id: %d" % (path_id))
+        db_path = self.__get_database_path()
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM path WHERE idPath = ?", [path_id])
+        conn.commit()
+        cursor.close()
+        conn.close()
+    
+    def __remove_folder_database(self, label):
+        folder = os.path.join(self.library_folder, label)+os.sep
+        has_row, row_id = self.__check_database(folder)
+        if has_row:
+            self.__remove_folder_database_by_path_id(row_id)
 
     def __update_movies_library(self):
         movies = utils.call_service("load_all_contents", {"begin": 0, "category": "Cinema"})
@@ -132,7 +194,12 @@ class TimVisionLibrary(object):
         base_series_folder = os.path.join(self.library_folder, self.tvshows_folder)
         items = TimVisionObjects.parse_collection(tvshows)
         for tvshow in items:
-            normalized_show_name = "%s (%d)" % (self.__normalize_path(tvshow.title), tvshow.year)
+            title_normalized = self.__normalize_path(tvshow.title)
+            if len(title_normalized) == 0:
+                # TODO: FIX ME
+                continue #skip shows with unicode characters/empty title
+            Logger.kodi_log("Library (TV): %s" % (title_normalized))
+            normalized_show_name = "%s (%d)" % (title_normalized, tvshow.year)
             show_folder = os.path.join(base_series_folder, normalized_show_name)
             xbmcvfs.mkdir(show_folder)
             seasons_json = utils.call_service("get_show_content", {"contentId": tvshow.content_id, "contentType": TimVisionAPI.TVSHOW_CONTENT_TYPE_SEASONS})
@@ -148,25 +215,32 @@ class TimVisionLibrary(object):
     def __normalize_path(self, filename):
         cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
         newName = ''.join(c for c in cleanedFilename if c not in invalidFilenameChars)
-        if len(newName) == 0:
-            return xbmc.makeLegalFilename(filename)
+        #if len(newName) == 0:
+        #    return xbmc.makeLegalFilename(filename)
         return newName
     
     def __check_database(self, folder):
         path_found = False
+        rowid = -1
         db_path = self.__get_database_path()
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM path WHERE strPath = ?", [folder])
-        if cursor.fetchone() != None:
+        cursor.execute("SELECT idPath FROM path WHERE strPath = ?", [folder])
+        row = cursor.fetchone()
+        if row != None:
             path_found = True
+            rowid = row[0]
         cursor.close()
         conn.close()
-        return path_found
+        return path_found, rowid
 
     def __insert_folder_database(self, label):
+        database_insert = utils.get_setting("lib_export_kodi_library")
+        if not database_insert:
+            return
         folder = os.path.join(self.library_folder, label)+os.sep
-        if self.__check_database(folder):
+        entry_found, _ = self.__check_database(folder)
+        if entry_found:
             return False
         if label == self.movies_folder:
             strScraper = "metadata.themoviedb.org"

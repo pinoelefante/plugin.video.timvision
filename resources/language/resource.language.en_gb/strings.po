@@ -213,6 +213,7 @@ msgctxt "#30045"
 msgid "An error occurred or the content is not playable on this device"
 msgstr ""
 
+## this ids can be free
 msgctxt "#30046"
 msgid "Addon not found"
 msgstr ""
@@ -228,6 +229,7 @@ msgstr ""
 msgctxt "#30049"
 msgid "Addon disabled"
 msgstr ""
+##
 
 msgctxt "#30050"
 msgid "Resume video"
@@ -247,4 +249,52 @@ msgstr ""
 
 msgctxt "#30054"
 msgid "Make a donation"
+msgstr ""
+
+msgctxt "#30055"
+msgid "Library"
+msgstr ""
+
+msgctxt "#30056"
+msgid "Enable library"
+msgstr ""
+
+msgctxt "#30057"
+msgid "Export folder"
+msgstr ""
+
+msgctxt "#30058"
+msgid "Export movies"
+msgstr ""
+
+msgctxt "#30059"
+msgid "Export tv shows"
+msgstr ""
+
+msgctxt "#30060"
+msgid "Add to KODI's library"
+msgstr ""
+
+msgctxt "#30061"
+msgid "NOTICE: to see the TIMVISION's video sources, you need to restart KODI"
+msgstr ""
+
+msgctxt "#30062"
+msgid "Donation prompt enable"
+msgstr ""
+
+msgctxt "#30063"
+msgid "It is not possible play videos on this device"
+msgstr ""
+
+msgctxt "#30064"
+msgid "Donation"
+msgstr ""
+
+msgctxt "#30065"
+msgid "It seems you are often using the addon. Do you want to make a donation?"
+msgstr ""
+
+msgctxt "#30066"
+msgid "Verify KODI library"
 msgstr ""

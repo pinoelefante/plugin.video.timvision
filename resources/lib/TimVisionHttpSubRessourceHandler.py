@@ -85,7 +85,8 @@ class TimVisionHttpSubRessourceHandler(object):
         start_time = float(params.get("time", ["0.0"])[0])
         content_type = params.get("videoType")[0]
         duration = params.get("duration")[0]
-        return self.timvision_session.set_playing_media(url, content_id, start_time, content_type, duration)
+        paused =  bool(params.get("paused")[0])
+        return self.timvision_session.set_playing_media(url, content_id, start_time, content_type, duration, paused)
 
     def stop_content(self, params):
         content_id = params.get("contentId")[0]

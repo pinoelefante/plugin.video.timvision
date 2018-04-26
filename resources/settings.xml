@@ -13,14 +13,23 @@
     <setting id="always_resume" type="bool" label="30007" value="true" default="true"/>
     <setting id="play_next_episode" type="bool" label="30008" value="true" default="true" visible="false" />
   </category>
-  <category label="Libreria">
-    <setting id="lib_export_enabled" label="Abilita libreria" type="bool" value="false" default="false"/>
-    <setting id="lib_export_folder" label="Cartella esportazione" type="folder" value="" default="" option="writeable" source="video"/>
-    <setting id="lib_export_movie" label="Esporta film" type="bool" value="true" default="true" enable="eq(-2,true)"/>
-    <setting id="lib_export_tvshow" label="Esporta serie tv" type="bool" value="false" default="false" enable="eq(-3,true)"/>
-    <setting id="lib_export_check_days" label="Aggiorna ogni (giorni)" type="number" value="7" default="7" enable="eq(-4,true)"/>
+  <category label="30055">
+    <setting id="lib_export_enabled" label="30056" type="bool" value="false" default="false"/>
+    <setting id="lib_export_movies" label="30058" type="bool" value="true" default="true" enable="eq(-1,true)"/>
+    <setting id="lib_export_tvshows" label="30059" type="bool" value="true" default="true" enable="eq(-2,true)"/>
+    <setting id="lib_export_kodi_library" label="30060" type="bool" value="false" default="false" enable="eq(-3,true)"/>
+    <setting id="lib_export_kodi_verify" type="action" label="30066" action="RunPlugin(plugin://plugin.video.timvision/?action=library_kodi)" option="close"/>
+    <!-- Non disponibile, cosi da eliminare i dati esportati quando l'addon viene disinstallato
+    <setting id="lib_export_folder" label="30057" type="folder" value="" default="" option="writeable" source="video"/>
+    -->
+    <!--
     <setting id="lib_export_now" type="action" label="Crea libreria" action="RunPlugin(plugin://plugin.video.timvision/?action=library)" option="close" enable="eq(-5,true)"/>
-    <setting id="lib_export_last_check" type="number" value="0" default="0" visible="false"/>
+    -->
+    <setting label="30061"/>
+    <!-- HIDDEN -->
+    <setting id="lib_export_last_update_movies" type="number" value="0" default="0" visible="false"/>
+    <setting id="lib_export_last_update_tvshows" type="number" value="0" default="0" visible="false"/>
+    <setting id="lib_export_updating" type="bool" value="false" default="false" visible="false"/>
   </category>
   <category label="30009">
     <setting id="custom_view_enabled" label="30010" type="bool" value="false" default="false"/>
@@ -44,15 +53,13 @@
     <!-- Hidden -->
     <setting id="timvision_service_port" value="8001" visible="false"/>
     <setting id="kodi_version_alert_shown" type="bool" value="false" default="false" visible="false"/>
-    
   </category>
   <category label="30030">
     <setting label="30052" type="text" enable="false" default=""/>
     <setting label="30053" type="text" enable="false" default=""/>
+    <setting id="timvision_show_donation" label="30062" type="bool" value="true" default="true" visible="true"/>
     <setting label="30054" type="action" action="RunPlugin(plugin://plugin.video.timvision/?action=donation)" option="close"/>
     <!-- Hidden -->
     <setting id="timvision_start_count" type="number" value="0" visible="false"/>
-    <setting id="timvision_start_last" type="number" value="0" visible="false"/>
-    <setting id="timvision_donation_count" type="number" value="0" default="0" visible="false"/>
   </category>
 </settings>

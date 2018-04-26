@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.timvision" name="TIMVISION" version="1.0.20" provider-name="pinoelefante">
+<addon id="plugin.video.timvision" name="TIMVISION" version="1.0.21" provider-name="pinoelefante">
   <requires>
     <import addon="xbmc.python" version="2.25.0"/>
     <import addon="script.module.requests" version="2.12.4"/>
     <import addon="script.module.xmltodict" version="0.9.0"/>
+    <import addon="script.module.inputstreamhelper" version="0.3.3"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="addon.py">
     <provides>video</provides>
@@ -21,8 +22,10 @@
     <platform>all</platform>
     <license>GPL</license>
     <source>https://github.com/pinoelefante/plugin.video.timvision</source>
-    <news>v1.0.20 (2017-11-26)
-- Folder view
+    <news>v1.0.21 (2018-04-21)
+- Fix riproduzione in HD
+- Export dei contenuti di TIMVision nella libreria di KODI
+- Verifica automatica di inputstream adaptive e installazione moduli Widevine (thanks to emilsvennesson)
     </news>
   </extension>
 </addon>

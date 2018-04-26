@@ -163,7 +163,7 @@ class TimVisionSession(object):
         if cp_id != None:
             asset_id_wd = TimVisionSession.get_asset_id_wd(mpd)
             if has_hd and utils.get_setting("prefer_hd"):
-                mpd = mpd.replace("_SD.mpd", "_HD.mpd")
+                mpd = mpd.replace("_SD", "_HD")
             major_version, __minor_version = utils.get_kodi_version()
             wv_url = self.widevine_proxy_url.replace("{ContentIdAVS}", content_id).replace("{AssetIdWD}", asset_id_wd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", SERVICE_CHANNEL).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
             if major_version < 18:
@@ -312,8 +312,8 @@ class TimVisionSession(object):
                 return resp.content
         return None
 
-    def set_playing_media(self, url, content_id, start_time, content_type, duration):
-        self.player.setItem(url, content_id, start_time, content_type, duration)
+    def set_playing_media(self, url, content_id, start_time, content_type, duration, paused=False):
+        self.player.setItem(url, content_id, start_time, content_type, duration, paused)
 
     def keep_alive(self, content_id):
         url = "/besc?action=KeepAlive&channel={channel}&type={deviceType}&noRefresh=Y&providerName={providerName}&serviceName={serviceName}&contentId="+str(content_id)
