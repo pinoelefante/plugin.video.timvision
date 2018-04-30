@@ -17,6 +17,7 @@ class MyPlayer(xbmc.Player):
     keep_alive_limit = 600
     keep_alive_token = None
     last_time_end = 0
+    start_paused = False
 
     def setItem(self, url, content_id, start_point=0.0, content_type='', total_time=0, paused=False):
         self.current_item = url
@@ -25,7 +26,7 @@ class MyPlayer(xbmc.Player):
         self.current_video_type = content_type
         self.total_time = int(total_time)
         self.start_paused = paused
-        Logger.log_write("Setting item (%s - %s) Duration (%d/%d): %s" % (content_id, content_type, self.start_from, self.total_time, url), mode=Logger.LOG_PLAYER)
+        Logger.log_write("Setting item (%s - %s) Duration (%d/%d): %s Paused=%s" % (content_id, content_type, self.start_from, self.total_time, url, str(paused)), mode=Logger.LOG_PLAYER)
 
     def onPlayBackStarted(self):
         if self.current_item != None and self.isPlaying():

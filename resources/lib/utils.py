@@ -14,7 +14,7 @@ except ImportError:
 from resources.lib import Logger
 
 def get_bool(text):
-    text = text.lower()
+    text = str(text).lower()
     return text == "true"
 
 def get_setting(key):
