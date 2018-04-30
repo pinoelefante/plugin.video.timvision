@@ -3,6 +3,7 @@ import time
 import urllib
 from resources.lib import Logger, utils, TimVisionObjects, MyPlayer
 from requests import session
+from random import randint
 
 AREA_FREE = "SVOD"
 AREA_PAY = "TVOD"
@@ -67,12 +68,16 @@ class TimVisionSession(object):
         return False
 
     def login(self, username, password):
+        deviceId = utils.get_setting("timvision_device_id")
+        if deviceId == None or len(deviceId) < 38:
+            deviceId = self.__random_device_id()
+            utils.set_setting("timvision_device_id", deviceId)
         data = {
             'username': username,
             'password': password,
             'customData': '{"customData":[{"name":"deviceType","value":' + DEVICE_TYPE + '},{"name":"deviceVendor","value":""},{"name":"accountDeviceModel","value":""},{"name":"FirmwareVersion","value":""},{"name":"Loader","value":""},{"name":"ResidentApp","value":""},{"name":"DeviceLanguage","value":"it"},{"name":"NetworkType","value":""},{"name":"DisplayDimension","value":""},{"name":"OSversion","value":"Windows 10"},{"name":"AppVersion","value":""},{"name":"DeviceRooted","value":""},{"name":"NetworkOperatoreName","value":""},{"name":"ServiceOperatorName","value":""},{"name":"Custom1","value":"Firefox"},{"name":"Custom2","value":54},{"name":"Custom3","value":"1920x1080"},{"name":"Custom4","value":"PC"},{"name":"Custom5","value":""},{"name":"Custom6","value":""},{"name":"Custom7","value":""},{"name":"Custom8","value":""},{"name":"Custom9","value":""}]}'
         }
-        url = "/besc?action=Login&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}"
+        url = "/besc?action=Login&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}&accountDeviceId=%s" % (deviceId)
         response = self.send_request(url=url, base_url=self.BASE_URL_AVS, method="POST", data=data)
         if response != None:
             self.api_endpoint.headers.__setitem__(self.user_http_header, response["resultObj"])
@@ -84,6 +89,13 @@ class TimVisionSession(object):
             check_thread.start()
             return True
         return False
+
+    def __random_device_id(self):
+        device_id = ""
+        while len(device_id) < 38:
+            chunk = randint(10, 99)
+            device_id = device_id + str(chunk)
+        return device_id
 
     def logout(self):
         """ deviceId not present (javascript localstorage)

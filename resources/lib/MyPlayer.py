@@ -32,7 +32,6 @@ class MyPlayer(xbmc.Player):
             playing_file = self.getPlayingFile()
             self.listen = self.current_item == playing_file
         if not self.listen:
-            Logger.log_write("%s is not setted item" % (playing_file), Logger.LOG_PLAYER)
             return
         if self.start_from >= 10:
             self.seekTime(float(self.start_from))

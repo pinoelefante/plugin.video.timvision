@@ -53,6 +53,7 @@
     <!-- Hidden -->
     <setting id="timvision_service_port" value="8001" visible="false"/>
     <setting id="kodi_version_alert_shown" type="bool" value="false" default="false" visible="false"/>
+    <setting id="timvision_device_id" value="" visible="false"/>
   </category>
   <category label="30030">
     <setting label="30052" type="text" enable="false" default=""/>

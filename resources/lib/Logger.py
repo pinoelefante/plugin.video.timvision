@@ -26,7 +26,7 @@ def log_write(msg, mode):
     if msg != None:
         if isinstance(msg, unicode):
             msg = msg.encode('utf-8')
-        message = "[%s] - %s" % mode, msg
+        message = "[%s] - %s" % (mode, msg)
         kodi_log(message)
 
 def kodi_log(msg, level=xbmc.LOGNOTICE):
