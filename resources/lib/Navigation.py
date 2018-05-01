@@ -362,8 +362,8 @@ class Navigation(object):
         return 55
     
     def increase_play_video_count(self):
-        show_donation_enabled = utils.get_setting("timvision_show_donation")
-        play_video_count = int(utils.get_setting("timvision_start_count"))
+        show_donation_enabled = utils.get_setting("timvision_show_donation", "true")
+        play_video_count = int(utils.get_setting("timvision_start_count", "0"))
         pause_video = False
         if show_donation_enabled:
             if play_video_count > 0 and play_video_count % 100 == 0:

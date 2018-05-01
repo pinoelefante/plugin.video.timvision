@@ -61,6 +61,6 @@
     <setting id="timvision_show_donation" label="30062" type="bool" value="true" default="true" visible="true"/>
     <setting label="30054" type="action" action="RunPlugin(plugin://plugin.video.timvision/?action=donation)" option="close"/>
     <!-- Hidden -->
-    <setting id="timvision_start_count" type="number" value="0" visible="false"/>
+    <setting id="timvision_start_count" type="number" default="0" value="0" visible="false"/>
   </category>
 </settings>

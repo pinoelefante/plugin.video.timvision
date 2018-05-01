@@ -17,9 +17,13 @@ def get_bool(text):
     text = str(text).lower()
     return text == "true"
 
-def get_setting(key):
+def get_setting(key, defaultValue=None):
     value = xbmcaddon.Addon().getSetting(key)
-    if value == "true" or value == "false":
+    if (value == None or len(value) == 0):
+        if defaultValue!=None:
+            set_setting(key, defaultValue)
+        return defaultValue
+    elif value == "true" or value == "false":
         return get_bool(value)
     return value
 
