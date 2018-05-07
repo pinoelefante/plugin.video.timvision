@@ -298,3 +298,7 @@ msgstr ""
 msgctxt "#30066"
 msgid "Verify KODI library"
 msgstr ""
+
+msgctxt "#30067"
+msgid "To play contents is required Kodi 18 or above"
+msgstr ""

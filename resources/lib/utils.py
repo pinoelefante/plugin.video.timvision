@@ -7,6 +7,7 @@ import SocketServer
 import socket
 import xbmc
 import xbmcaddon
+import xbmcvfs
 try:
     import cPickle as pickle
 except ImportError:
@@ -185,3 +186,6 @@ def get_local_string(string_id):
     if isinstance(locString, unicode):
         locString = locString.encode('utf-8')
     return locString
+
+def is_android():
+    return xbmcvfs.exists("/sdcard/Android/")

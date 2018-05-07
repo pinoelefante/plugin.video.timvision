@@ -296,3 +296,7 @@ msgstr "Sembra tu stia utilizzando spesso l'addon. Vorresti fare una donazione?"
 msgctxt "#30066"
 msgid "Verify KODI library"
 msgstr "Verifica libreria KODI"
+
+msgctxt "#30067"
+msgid "To play contents is required Kodi 18 or above"
+msgstr "Per riprodurre i contenuti di TIMVISION e' necessario installere Kodi 18 o superiore"
