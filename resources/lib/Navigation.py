@@ -150,7 +150,7 @@ class Navigation(object):
         else:
             for cat in categories:
                 label = cat["metadata"]["label"]
-                if label == "A NOLEGGIO":
+                if label in ["A NOLEGGIO", "SPORT"]:
                     continue
                 list_item = xbmcgui.ListItem(label=label.lower().capitalize())
                 uri = cat["actions"][0]["uri"]
@@ -227,7 +227,9 @@ class Navigation(object):
                 view_mode = VIEW_FOLDERS
         if len(title) > 0:
             xbmcplugin.setPluginCategory(self.plugin_handle, title)
-        xbmcplugin.setContent(handle=self.plugin_handle, content=view_mode)
+            
+        if view_mode not in [VIEW_FOLDERS]:
+            xbmcplugin.setContent(handle=self.plugin_handle, content=view_mode)
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
         self.set_custom_view(view_mode)
         return True
