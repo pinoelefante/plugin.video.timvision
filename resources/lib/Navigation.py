@@ -132,15 +132,13 @@ class Navigation(object):
         return logged
 
     def verify_version(self, force=False):
-        major, minor = utils.get_kodi_version()
-        is_android = utils.is_android()
-        
-        if (is_android and major >= 18) or (not is_android and (major >= 18 or (major == 17 and minor >= 4))):
+        major, _ = utils.get_kodi_version()
+        if major >= 18:
             return True
         
         if not utils.get_setting("kodi_version_alert_shown") or force:
             dialog_title = utils.get_local_string(30040)
-            dialog_msg = utils.get_local_string(30041 if not is_android else 30067)
+            dialog_msg = utils.get_local_string(30067)
             Dialogs.show_dialog(dialog_msg, dialog_title)
             utils.set_setting("kodi_version_alert_shown", "true")
         return False

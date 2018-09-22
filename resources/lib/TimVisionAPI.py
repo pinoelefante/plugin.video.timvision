@@ -176,10 +176,12 @@ class TimVisionSession(object):
             asset_id_wd = TimVisionSession.get_asset_id_wd(mpd)
             if has_hd and utils.get_setting("prefer_hd"):
                 mpd = mpd.replace("_SD", "_HD")
-            major_version, __minor_version = utils.get_kodi_version()
             wv_url = self.widevine_proxy_url.replace("{ContentIdAVS}", content_id).replace("{AssetIdWD}", asset_id_wd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", SERVICE_CHANNEL).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
+            '''
+            major_version, _ = utils.get_kodi_version()
             if major_version < 18:
                 wv_url = utils.url_join(utils.get_service_url(), "?action=get_license&license_url=%s" % (urllib.quote(wv_url)))
+            '''
             return {
                 "mpd_file": mpd,
                 "avs_cookie":self.avs_cookie,
@@ -313,7 +315,7 @@ class TimVisionSession(object):
         if response != None:
             return response["resultObj"]["containers"][0]["items"] if response["resultObj"]["total"] > 0 else {}
         return None
-
+    '''
     def get_widevine_response(self, widevine_request, widevine_url):
         for _ in range(0, 3):
             Logger.log_write("Trying to get widevine license", mode=Logger.LOG_WIDEVINE)
@@ -323,7 +325,7 @@ class TimVisionSession(object):
                 Logger.log_write("We get it! WOW", mode=Logger.LOG_WIDEVINE)
                 return resp.content
         return None
-
+    '''
     def set_playing_media(self, url, content_id, start_time, content_type, duration, paused=False):
         self.player.setItem(url, content_id, start_time, content_type, duration, paused)
 

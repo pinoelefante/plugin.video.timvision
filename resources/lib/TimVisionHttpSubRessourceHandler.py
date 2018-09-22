@@ -70,11 +70,11 @@ class TimVisionHttpSubRessourceHandler(object):
     def get_movie_trailer(self, params):
         content_id = params.get("contentId")[0]
         return self.timvision_session.get_movie_trailer(content_id)
-
+    '''
     def get_license(self, params, rawdata): #rawdata is widevine payload
         url = urllib.unquote(params.get("license_url")[0])
         return self.timvision_session.get_widevine_response(rawdata, url)
-
+    '''
     def search(self, params):
         keyword = params.get("keyword", [""])[0]
         return self.timvision_session.search(keyword)
