@@ -24,15 +24,15 @@ def log_write(msg, mode):
         return
 
     if msg != None:
-        if isinstance(msg, unicode):
+        if not isinstance(msg, str):
             msg = msg.encode('utf-8')
         message = "[%s] - %s" % (mode, msg)
         kodi_log(message)
 
-def kodi_log(msg, level=xbmc.LOGNOTICE):
+def kodi_log(msg, level=xbmc.LOGINFO):
     """
         Adds a log entry to the Kodi log
     """
-    if isinstance(msg, unicode):
+    if not isinstance(msg, str):
         msg = msg.encode('utf-8')
     xbmc.log('[%s] %s' % ("TIMVISION", msg.__str__()), level)

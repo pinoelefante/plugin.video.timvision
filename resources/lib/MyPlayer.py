@@ -66,6 +66,7 @@ class MyPlayer(xbmc.Player):
             return
         Logger.log_write("Stopped ("+self.current_content_id+")", mode=Logger.LOG_PLAYER)
         self.playback_thread_stop_event.set()
+        pass
 
     def onPlayBackResumed(self):
         if not self.listen:
@@ -86,9 +87,16 @@ class MyPlayer(xbmc.Player):
 
     def check_time(self):
         time_elapsed = 0
-        self.current_time = int(self.getTime())
-        while self.current_time > self.total_time or self.current_time < 0:
-            xbmc.sleep(200)
+        timecheck=0
+        while self.current_time == 0 or self.current_time > self.total_time or self.current_time < 0:
+            try:
+                self.current_time = int(self.getTime())
+            except:
+                xbmc.sleep(200)
+                time.sleep(0.2)
+                timecheck += 1
+                if timecheck > 150:  # 150 * 0.2 = 30s
+                    raise Exception("Playback is not started")
         self.onCorrectTimeLoaded()
         
         while not self.playback_thread_stop_event.isSet():

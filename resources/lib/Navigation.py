@@ -1,4 +1,7 @@
-import urllib
+try: #python 3
+    from urllib.parse import unquote, unquote_plus, quote_plus
+except: #python 2
+    from urllib import unquote, unquote_plus, quote_plus
 import xbmc
 import xbmcgui
 import xbmcplugin
@@ -30,7 +33,7 @@ class Navigation(object):
             self.verify_version()
             self.create_main_page()
         else:
-            if params.has_key("page"):
+            if "page" in params:
                 page = params.get("page")
                 category_id = params.get("category_id")
                 if page in ["HOME", "INTRATTENIMENTO"]:
@@ -42,7 +45,7 @@ class Navigation(object):
                 elif page == "BAMBINI":
                     self.create_category_page(page_id=category_id, ha_elenco=True, category_name='Kids')
 
-            if params.has_key("action"):
+            if "action" in params:
                 action = params.get("action")
                 if action == "full_list":
                     category = params.get("category")
@@ -50,7 +53,7 @@ class Navigation(object):
                     self.add_items_to_folder(items)
                 elif action == "apri_serie":
                     id_serie = params.get("id_serie")
-                    nome_serie = urllib.unquote(params.get("serieNome", ""))
+                    nome_serie = unquote(params.get("serieNome", ""))
                     items = utils.call_service("get_show_content", {"contentId": id_serie, "contentType": TimVisionAPI.TVSHOW_CONTENT_TYPE_SEASONS})
                     if len(items) == 1 and utils.get_setting("unique_season"):
                         items = TimVisionObjects.parse_collection(items)
@@ -70,7 +73,7 @@ class Navigation(object):
                     paused = self.increase_play_video_count()
                     self.play_video(content_id, video_type, has_hd, start_offset, duration, paused)
                 elif action == "open_page":
-                    uri = urllib.unquote_plus(params.get("uri")).replace("maxResults=30", "maxResults=50").replace("&addSeeMore=50", "")
+                    uri = unquote_plus(params.get("uri")).replace("maxResults=30", "maxResults=50").replace("&addSeeMore=50", "")
                     items = utils.call_service("get_contents", {"url": uri})
                     items = [x for x in items if x["layout"] != "SEE_MORE"]
                     self.add_items_to_folder(items)
@@ -180,7 +183,7 @@ class Navigation(object):
                 if page["metadata"]["label"] == "TUTTI I TITOLI":
                     continue
                 list_item = xbmcgui.ListItem(label=page["metadata"]["label"].lower().capitalize())
-                url = utils.url_join(self.plugin_dir, "?action=open_page&uri=%s" % (urllib.quote_plus(page["retrieveItems"]["uri"])))
+                url = utils.url_join(self.plugin_dir, "?action=open_page&uri=%s" % (quote_plus(page["retrieveItems"]["uri"])))
                 xbmcplugin.addDirectoryItem(handle=self.plugin_handle, isFolder=True, listitem=list_item, url=url)
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
         return

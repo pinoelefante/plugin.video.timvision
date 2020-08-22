@@ -1,9 +1,12 @@
 import threading
 import time
-import urllib
 from resources.lib import Logger, utils, TimVisionObjects, MyPlayer
 from requests import session
 from random import randint
+try:
+    from urllib.parse import quote
+except:
+    from urllib import quote
 
 AREA_FREE = "SVOD"
 AREA_PAY = "TVOD"
@@ -176,7 +179,7 @@ class TimVisionSession(object):
             asset_id_wd = TimVisionSession.get_asset_id_wd(mpd)
             if has_hd and utils.get_setting("prefer_hd"):
                 mpd = mpd.replace("_SD", "_HD")
-            wv_url = self.widevine_proxy_url.replace("{ContentIdAVS}", content_id).replace("{AssetIdWD}", asset_id_wd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", SERVICE_CHANNEL).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
+            wv_url = self.widevine_proxy_url.replace("{ContentIdAVS}", content_id).replace("{AssetIdWD}", asset_id_wd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(int(time.time() * 1000))).replace("{Channel}", SERVICE_CHANNEL).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
             '''
             major_version, _ = utils.get_kodi_version()
             if major_version < 18:
@@ -309,7 +312,7 @@ class TimVisionSession(object):
         return None
 
     def search(self, keyword, area=AREA_FREE):
-        keyword = urllib.quote(keyword)
+        keyword = quote(keyword)
         url = "/TRAY/SEARCHRECOM?keyword="+keyword+"&from=0&to=100&area="+area+"&category=ALL&deviceType={deviceType}&serviceName={serviceName}"
         response = self.send_request(url, self.BASE_URL_TIM)
         if response != None:

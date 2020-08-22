@@ -1,4 +1,7 @@
-import urllib
+try:
+    from urllib.parse import quote, quote_plus
+except:
+    from urllib import quote, quote_plus
 import xbmcgui
 from resources.lib import utils
 
@@ -129,11 +132,11 @@ class TimVisionContent(TimVisionBaseObject):
         is_folder = True if self.mediatype in [ITEM_TVSHOW, ITEM_SEASON, ITEM_COLLECTION] else False
 
         if self.mediatype == ITEM_TVSHOW:
-            url = "?action=apri_serie&id_serie=%s&serieNome=%s" % (str(self.content_id), urllib.quote(self.title.encode("utf-8")))
+            url = "?action=apri_serie&id_serie=%s&serieNome=%s" % (str(self.content_id), quote(self.title.encode("utf-8")))
         elif self.mediatype == ITEM_SEASON:
             url = "?action=apri_stagione&seasonNo=%s&id_stagione=%s" % (str(self.season), str(self.content_id))
         elif self.mediatype == ITEM_COLLECTION:
-            url = "?action=open_page&uri=" + urllib.quote_plus(self.content_id)
+            url = "?action=open_page&uri=" + quote_plus(self.content_id)
         elif self.mediatype in [ITEM_MOVIE, ITEM_EPISODE]:
             url = "?action=play_item&contentId=%s&videoType=%s&has_hd=%s&startPoint=%s&contentType=%s&duration=%s" % (str(self.content_id), self.mediatype, str(self.is_hd_available), str(self.bookmark), self.mediatype, str(self.duration))
             list_item.setProperty("isPlayable", "true")

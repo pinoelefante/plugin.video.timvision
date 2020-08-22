@@ -1,7 +1,13 @@
-import BaseHTTPServer
+try:
+    from http.server import BaseHTTPRequestHandler
+    from urllib.parse import urlparse, parse_qs
+except:
+    from BaseHTTPServer import BaseHTTPRequestHandler
+    from urlparse import urlparse, parse_qs
+
 import json
 from types import FunctionType
-from urlparse import urlparse, parse_qs
+
 from resources.lib.TimVisionAPI import TimVisionSession
 from resources.lib.TimVisionHttpSubRessourceHandler import TimVisionHttpSubRessourceHandler
 
@@ -9,7 +15,7 @@ TIMVISION = TimVisionSession()
 METHODS = [x for x, y in TimVisionHttpSubRessourceHandler.__dict__.items() if isinstance(y, FunctionType)]
 SUB_HANDLER = TimVisionHttpSubRessourceHandler(timvision_session=TIMVISION)
 
-class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class TimVisionHttpRequestHandler(BaseHTTPRequestHandler):
     """ Represents the callable internal server that dispatches requests to TimVision"""
 
     def do_GET(self):
@@ -33,7 +39,7 @@ class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
-        self.wfile.write(json.dumps({'method': method, 'result': result}))
+        self.wfile.write(json.dumps({'method': method, 'result': result}).encode())
         return
 
     def do_POST(self):
@@ -59,7 +65,7 @@ class TimVisionHttpRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.send_response(200 if result != None else 500)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
-        self.wfile.write(result if result != None else "")
+        self.wfile.write(result.encode() if result != None else "".encode())
         return
 
     def log_message(self, format, *args):
