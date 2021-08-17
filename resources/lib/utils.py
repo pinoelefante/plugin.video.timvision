@@ -62,7 +62,10 @@ def call_service(method, params={}, try_time=1):
         call_service(method, params, try_time+1)
 
 def get_user_agent():
-    return 'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0'
+    return 'user-agent=' + get_user_agent_value()
+
+def get_user_agent_value():
+    return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0'
 
 def get_parameters_dict_from_url(parameters):
     return dict(parse_qsl(parameters[1:]))

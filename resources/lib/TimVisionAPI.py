@@ -35,14 +35,15 @@ class TimVisionSession(object):
     favourites = None
     avs_cookie = None
     stop_check_session = None
+    xsrf_token = None
 
     def __init__(self):
         self.api_endpoint.headers.update({
-            'User-Agent': utils.get_user_agent(),
+            'User-Agent': utils.get_user_agent_value(),
             'Accept-Encoding': 'gzip, deflate',
         })
         self.license_endpoint.headers.update({
-            'User-Agent': utils.get_user_agent(),
+            'User-Agent': utils.get_user_agent_value(),
             'Accept-Encoding': 'gzip, deflate',
             'Host': 'license.timvision.it',
             'Origin': 'https://www.timvision.it'
@@ -78,9 +79,9 @@ class TimVisionSession(object):
         data = {
             'username': username,
             'password': password,
-            'customData': '{"customData":[{"name":"deviceType","value":' + DEVICE_TYPE + '},{"name":"deviceVendor","value":""},{"name":"accountDeviceModel","value":""},{"name":"FirmwareVersion","value":""},{"name":"Loader","value":""},{"name":"ResidentApp","value":""},{"name":"DeviceLanguage","value":"it"},{"name":"NetworkType","value":""},{"name":"DisplayDimension","value":""},{"name":"OSversion","value":"Windows 10"},{"name":"AppVersion","value":""},{"name":"DeviceRooted","value":""},{"name":"NetworkOperatoreName","value":""},{"name":"ServiceOperatorName","value":""},{"name":"Custom1","value":"Firefox"},{"name":"Custom2","value":54},{"name":"Custom3","value":"1920x1080"},{"name":"Custom4","value":"PC"},{"name":"Custom5","value":""},{"name":"Custom6","value":""},{"name":"Custom7","value":""},{"name":"Custom8","value":""},{"name":"Custom9","value":""}]}'
+            'customData': '{"customData":[{"name":"deviceType","value":' + DEVICE_TYPE + '},{"name":"deviceVendor","value":""},{"name":"accountDeviceModel","value":""},{"name":"FirmwareVersion","value":""},{"name":"Loader","value":""},{"name":"ResidentApp","value":""},{"name":"DeviceLanguage","value":"it"},{"name":"NetworkType","value":""},{"name":"DisplayDimension","value":"30.6"},{"name":"OSversion","value":"Windows 10"},{"name":"AppVersion","value": \"' + self.app_version +'\"},{"name":"DeviceRooted","value":""},{"name":"NetworkOperatoreName","value":""},{"name":"ServiceOperatorName","value":""},{"name":"Custom1","value":"Firefox"},{"name":"Custom2","value":91},{"name":"Custom3","value":"1920x1080"},{"name":"Custom4","value":"PC"},{"name":"Custom5","value":""},{"name":"Custom6","value":""},{"name":"Custom7","value":""},{"name":"Custom8","value":""},{"name":"Custom9","value":""}]}'
         }
-        url = "/besc?action=Login&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}&accountDeviceId=%s" % (deviceId)
+        url = "/besc?action=Login&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}&accountDeviceId=%s&accountDeviceVersion={appVersion}&appVersion={appVersion}&accountDeviceIdType=SERIALNUMBER&accountDeviceModel={deviceType}&deviceVendor={deviceType}" % (deviceId)
         response = self.send_request(url=url, base_url=self.BASE_URL_AVS, method="POST", data=data)
         if response != None:
             self.api_endpoint.headers.__setitem__(self.user_http_header, response["resultObj"])
@@ -119,6 +120,7 @@ class TimVisionSession(object):
         if self.stop_check_session != None:
             self.stop_check_session.set()
         return True
+
     def is_logged(self):
         if not self.init_ok:
             self.init_ok = self.setup()
@@ -136,6 +138,8 @@ class TimVisionSession(object):
         response = self.api_endpoint.get(url, params=data) if method == "GET" else self.api_endpoint.post(url, data=data)
         Logger.log_write("Status Code: "+str(response.status_code), Logger.LOG_TIMVISION)
         if response.status_code == 200:
+            if "X-Xsrf-Token" in response.headers.keys():
+                self.xsrf_token = response.headers["X-Xsrf-Token"]
             data = response.json()
             Logger.log_write("Response: "+response.text, Logger.LOG_TIMVISION)
             if isinstance(data, list):
@@ -305,7 +309,7 @@ class TimVisionSession(object):
         cp_id, _mpd = self.get_mpd_file(content_id, "MOVIE")
         if cp_id is None:
             return None
-        url = "/besc?action=GetCDN&channel={channel}&type=TRAILER&asJson=Y&serviceName={serviceName}&providerName={providerName}&deviceType=CHROME&cp_id="+cp_id
+        url = "/besc?action=GetCDN&channel={channel}&orChannel=CUBOWEB&type=TRAILER&asJson=Y&serviceName={serviceName}&providerName={providerName}&deviceType={deviceType}&orDeviceType=CHROME&cp_id=%s&orCp_id=%s&appVersion={appVersion}&contentId=%s&videoType=SD&pch" % (cp_id, cp_id, content_id)
         response = self.send_request(url, self.BASE_URL_AVS)
         if response != None:
             return response["resultObj"]["src"]

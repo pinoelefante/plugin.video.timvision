@@ -1,3 +1,27 @@
+**v1.1.1 (2021-08-17)**
+- Login fix
+
+**v1.1.0 (2020-08-22)**
+- Aggiunto supporto a python 3, ma non abilitato
+
+**v1.0.24 (2018-05-07)**
+- bugfix
+
+**v1.0.23 (2018-05-01)**
+- bugfix
+
+**v1.0.22 (2018-04-30)**
+- Login fix
+- Minor bugfix
+
+**v1.0.21 (2018-04-21)**
+- Fix riproduzione in HD
+- Export dei contenuti di TIMVision nella libreria di KODI
+- Verifica automatica di inputstream adaptive e installazione moduli Widevine (thanks to emilsvennesson)
+
+**v1.0.20 (2017-11-26)**
+- Folder view
+
 **v1.0.19 (2017-11-17)**
 - Viste personalizzate
 
