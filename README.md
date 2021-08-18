@@ -3,7 +3,7 @@ Addon per Kodi per vedere i contenuti di **TIMVision**
 **Requisiti**
 
 - Un account attivo su TIMVision
-- Kodi 18 o superiore
+- Kodi 19
 
 **Android**
 
