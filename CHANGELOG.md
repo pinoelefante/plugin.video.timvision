@@ -1,4 +1,4 @@
-**v1.1.1 (2021-08-17)**
+**v1.1.2 (2021-08-18)**
 - apertura categoria sport
 - visione canali live
 - fix caricamento serie
