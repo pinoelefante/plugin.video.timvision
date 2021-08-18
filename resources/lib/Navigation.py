@@ -40,10 +40,12 @@ class Navigation(object):
                     self.create_category_page(page_id=category_id)
                 elif page == "CINEMA":
                     self.create_category_page(page_id=category_id, ha_elenco=True, category_name='Cinema')
-                elif page == "SERIE TV":
+                elif page == "SERIE":
                     self.create_category_page(page_id=category_id, ha_elenco=True, category_name='Serie')
                 elif page == "BAMBINI":
                     self.create_category_page(page_id=category_id, ha_elenco=True, category_name='Kids')
+                elif page == "SPORT":
+                    self.create_category_page(page_id=category_id, ha_elenco=False, category_name='Sport')
 
             if "action" in params:
                 action = params.get("action")
@@ -72,6 +74,11 @@ class Navigation(object):
                     duration = params.get("duration")
                     paused = self.increase_play_video_count()
                     self.play_video(content_id, video_type, has_hd, start_offset, duration, paused)
+                elif action == "play_live":
+                    content_id = params.get("id")
+                    duration = params.get("duration")
+                    self.increase_play_video_count()
+                    self.play_video(content_id, "LIVE", False, 0, duration, False)
                 elif action == "open_page":
                     uri = unquote_plus(params.get("uri")).replace("maxResults=30", "maxResults=50").replace("&addSeeMore=50", "")
                     items = utils.call_service("get_contents", {"url": uri})
@@ -154,7 +161,7 @@ class Navigation(object):
         else:
             for cat in categories:
                 label = cat["metadata"]["label"]
-                if label in ["A NOLEGGIO", "SPORT"]:
+                if label in ["A NOLEGGIO"]:
                     continue
                 list_item = xbmcgui.ListItem(label=label.lower().capitalize())
                 uri = cat["actions"][0]["uri"]
@@ -178,7 +185,7 @@ class Navigation(object):
 
         pages = utils.call_service("get_page", {"page": str(page_id)})
         if pages != None:
-            pages = [page for page in pages if page["layout"] in ["SMALL_CARDS", "KIDS_COLLECTIONS"]]
+            pages = [page for page in pages if page["layout"] in ["SMALL_CARDS", "KIDS_COLLECTIONS", "LIVE_CARDS"]]
             for page in pages:
                 if page["metadata"]["label"] == "TUTTI I TITOLI":
                     continue
@@ -280,7 +287,7 @@ class Navigation(object):
         play_item = xbmcgui.ListItem(path=url)
         play_item.setContentLookup(False)
         play_item.setMimeType('application/dash+xml')
-        play_item.setProperty('inputstreamaddon', "inputstream.adaptive")
+        play_item.setProperty('inputstream', "inputstream.adaptive")
         play_item.setProperty('inputstream.adaptive.stream_headers', "%s&Connection=keep-alive" % (user_agent))
         play_item.setProperty('inputstream.adaptive.manifest_type', PROTOCOL)
         
