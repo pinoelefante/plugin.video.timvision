@@ -1,4 +1,7 @@
-import urllib
+try: #python 3
+    from urllib.parse import unquote, unquote_plus, quote_plus
+except: #python 2
+    from urllib import unquote, unquote_plus, quote_plus
 import xbmc
 import xbmcgui
 import xbmcplugin
@@ -30,19 +33,21 @@ class Navigation(object):
             self.verify_version()
             self.create_main_page()
         else:
-            if params.has_key("page"):
+            if "page" in params:
                 page = params.get("page")
                 category_id = params.get("category_id")
                 if page in ["HOME", "INTRATTENIMENTO"]:
                     self.create_category_page(page_id=category_id)
                 elif page == "CINEMA":
                     self.create_category_page(page_id=category_id, ha_elenco=True, category_name='Cinema')
-                elif page == "SERIE TV":
+                elif page == "SERIE":
                     self.create_category_page(page_id=category_id, ha_elenco=True, category_name='Serie')
                 elif page == "BAMBINI":
                     self.create_category_page(page_id=category_id, ha_elenco=True, category_name='Kids')
+                elif page == "SPORT":
+                    self.create_category_page(page_id=category_id, ha_elenco=False, category_name='Sport')
 
-            if params.has_key("action"):
+            if "action" in params:
                 action = params.get("action")
                 if action == "full_list":
                     category = params.get("category")
@@ -50,7 +55,7 @@ class Navigation(object):
                     self.add_items_to_folder(items)
                 elif action == "apri_serie":
                     id_serie = params.get("id_serie")
-                    nome_serie = urllib.unquote(params.get("serieNome", ""))
+                    nome_serie = unquote(params.get("serieNome", ""))
                     items = utils.call_service("get_show_content", {"contentId": id_serie, "contentType": TimVisionAPI.TVSHOW_CONTENT_TYPE_SEASONS})
                     if len(items) == 1 and utils.get_setting("unique_season"):
                         items = TimVisionObjects.parse_collection(items)
@@ -69,8 +74,13 @@ class Navigation(object):
                     duration = params.get("duration")
                     paused = self.increase_play_video_count()
                     self.play_video(content_id, video_type, has_hd, start_offset, duration, paused)
+                elif action == "play_live":
+                    content_id = params.get("id")
+                    duration = params.get("duration")
+                    self.increase_play_video_count()
+                    self.play_video(content_id, "LIVE", False, 0, duration, False)
                 elif action == "open_page":
-                    uri = urllib.unquote_plus(params.get("uri")).replace("maxResults=30", "maxResults=50").replace("&addSeeMore=50", "")
+                    uri = unquote_plus(params.get("uri")).replace("maxResults=30", "maxResults=50").replace("&addSeeMore=50", "")
                     items = utils.call_service("get_contents", {"url": uri})
                     items = [x for x in items if x["layout"] != "SEE_MORE"]
                     self.add_items_to_folder(items)
@@ -151,7 +161,7 @@ class Navigation(object):
         else:
             for cat in categories:
                 label = cat["metadata"]["label"]
-                if label in ["A NOLEGGIO", "SPORT"]:
+                if label in ["A NOLEGGIO"]:
                     continue
                 list_item = xbmcgui.ListItem(label=label.lower().capitalize())
                 uri = cat["actions"][0]["uri"]
@@ -175,12 +185,12 @@ class Navigation(object):
 
         pages = utils.call_service("get_page", {"page": str(page_id)})
         if pages != None:
-            pages = [page for page in pages if page["layout"] in ["SMALL_CARDS", "KIDS_COLLECTIONS"]]
+            pages = [page for page in pages if page["layout"] in ["SMALL_CARDS", "KIDS_COLLECTIONS", "LIVE_CARDS"]]
             for page in pages:
                 if page["metadata"]["label"] == "TUTTI I TITOLI":
                     continue
                 list_item = xbmcgui.ListItem(label=page["metadata"]["label"].lower().capitalize())
-                url = utils.url_join(self.plugin_dir, "?action=open_page&uri=%s" % (urllib.quote_plus(page["retrieveItems"]["uri"])))
+                url = utils.url_join(self.plugin_dir, "?action=open_page&uri=%s" % (quote_plus(page["retrieveItems"]["uri"])))
                 xbmcplugin.addDirectoryItem(handle=self.plugin_handle, isFolder=True, listitem=list_item, url=url)
         xbmcplugin.endOfDirectory(handle=self.plugin_handle)
         return
@@ -277,7 +287,7 @@ class Navigation(object):
         play_item = xbmcgui.ListItem(path=url)
         play_item.setContentLookup(False)
         play_item.setMimeType('application/dash+xml')
-        play_item.setProperty('inputstreamaddon', "inputstream.adaptive")
+        play_item.setProperty('inputstream', "inputstream.adaptive")
         play_item.setProperty('inputstream.adaptive.stream_headers', "%s&Connection=keep-alive" % (user_agent))
         play_item.setProperty('inputstream.adaptive.manifest_type', PROTOCOL)
         

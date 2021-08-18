@@ -1,13 +1,18 @@
-import urlparse
-import urllib
-import urllib2
 import json
 import threading
-import SocketServer
 import socket
-import xbmc
-import xbmcaddon
-import xbmcvfs
+import xbmc, xbmcaddon, xbmcvfs
+try:
+    from socketserver import TCPServer
+    from urllib.parse import urlencode, parse_qsl
+    from urllib.request import urlopen
+    from urllib.error import URLError
+except:
+    from SocketServer import TCPServer
+    from urllib import urlencode
+    from urllib2 import urlopen, URLError
+    from urlparse import parse_qsl
+
 try:
     import cPickle as pickle
 except ImportError:
@@ -41,14 +46,14 @@ def get_service_url():
 def call_service(method, params={}, try_time=1):
     try:
         params.update({"method":method})
-        url_values = urllib.urlencode(params)
+        url_values = urlencode(params)
         full_url = get_service_url() + '?' + url_values
         Logger.log_write(full_url, Logger.LOG_API)
-        data = urllib2.urlopen(full_url).read()
+        data = urlopen(full_url).read().decode("utf-8") 
         parsed_json = json.loads(data)
         result = parsed_json.get('result', None)
         return result
-    except urllib2.URLError as error:
+    except URLError as error:
         Logger.log_write("webserver error: %s" % (str(error.reason)), Logger.LOG_API)
         if try_time == 5:
             Logger.log_write("TryTime limit reach. Returning None", Logger.LOG_API)
@@ -57,10 +62,13 @@ def call_service(method, params={}, try_time=1):
         call_service(method, params, try_time+1)
 
 def get_user_agent():
-    return 'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0'
+    return 'user-agent=' + get_user_agent_value()
+
+def get_user_agent_value():
+    return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0'
 
 def get_parameters_dict_from_url(parameters):
-    return dict(urlparse.parse_qsl(parameters[1:]))
+    return dict(parse_qsl(parameters[1:]))
 
 def url_join(base_url='', other=''):
     return base_url + ('/' if not base_url.endswith('/') and not other.startswith('/') else '') + other
@@ -132,25 +140,27 @@ def get_data_folder():
     return xbmc.translatePath(kodi_profile_dir)
 
 def save_pickle(item, pickle_file):
-    folder = get_data_folder()
-    path = url_join(folder, pickle_file)
-    with open(path, "w") as file_stream:
-        file_stream.truncate()
-        pickle.dump(item, file_stream)
-    file_stream.close()
+    #folder = get_data_folder()
+    #path = url_join(folder, pickle_file)
+    #with open(path, "w") as file_stream:
+    #    file_stream.truncate()
+    #    pickle.dump(item, file_stream)
+    #file_stream.close()
+    pass
 
 def load_pickle(pickle_file, default=None):
-    folder = get_data_folder()
-    path = url_join(folder, pickle_file)
-    try:
-        content = default
-        with open(path, "r") as file_stream:
-            content = pickle.load(file_stream)
-        file_stream.close()
-        return content
-    except:
-        Logger.kodi_log("Error while loading %s" % (pickle_file))
-        return default
+    #folder = get_data_folder()
+    #path = url_join(folder, pickle_file)
+    #try:
+    #    content = default
+    #    with open(path, "r") as file_stream:
+    #        content = pickle.load(file_stream)
+    #    file_stream.close()
+    #    return content
+    #except:
+    #    Logger.kodi_log("Error while loading %s" % (pickle_file))
+    #    return default
+    return default
 
 def select_unused_port():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -167,11 +177,11 @@ def start_webserver():
     set_setting('timvision_service_port', str(tv_port))
 
     # server defaults
-    SocketServer.TCPServer.allow_reuse_address = True
+    TCPServer.allow_reuse_address = True
 
     # configure the TimVision Data Server
     from resources.lib.TimVisionHttpRequestHandler import TimVisionHttpRequestHandler
-    tv_server = SocketServer.TCPServer(('127.0.0.1', tv_port), TimVisionHttpRequestHandler)
+    tv_server = TCPServer(('127.0.0.1', tv_port), TimVisionHttpRequestHandler)
     tv_server.server_activate()
     tv_server.timeout = 1
 
@@ -183,7 +193,7 @@ def start_webserver():
 
 def get_local_string(string_id):
     locString = xbmcaddon.Addon().getLocalizedString(string_id)
-    if isinstance(locString, unicode):
+    if not isinstance(locString, str):
         locString = locString.encode('utf-8')
     return locString
 

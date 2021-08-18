@@ -1,9 +1,12 @@
 import threading
 import time
-import urllib
 from resources.lib import Logger, utils, TimVisionObjects, MyPlayer
 from requests import session
 from random import randint
+try:
+    from urllib.parse import quote
+except:
+    from urllib import quote
 
 AREA_FREE = "SVOD"
 AREA_PAY = "TVOD"
@@ -32,14 +35,15 @@ class TimVisionSession(object):
     favourites = None
     avs_cookie = None
     stop_check_session = None
+    xsrf_token = None
 
     def __init__(self):
         self.api_endpoint.headers.update({
-            'User-Agent': utils.get_user_agent(),
+            'User-Agent': utils.get_user_agent_value(),
             'Accept-Encoding': 'gzip, deflate',
         })
         self.license_endpoint.headers.update({
-            'User-Agent': utils.get_user_agent(),
+            'User-Agent': utils.get_user_agent_value(),
             'Accept-Encoding': 'gzip, deflate',
             'Host': 'license.timvision.it',
             'Origin': 'https://www.timvision.it'
@@ -75,9 +79,9 @@ class TimVisionSession(object):
         data = {
             'username': username,
             'password': password,
-            'customData': '{"customData":[{"name":"deviceType","value":' + DEVICE_TYPE + '},{"name":"deviceVendor","value":""},{"name":"accountDeviceModel","value":""},{"name":"FirmwareVersion","value":""},{"name":"Loader","value":""},{"name":"ResidentApp","value":""},{"name":"DeviceLanguage","value":"it"},{"name":"NetworkType","value":""},{"name":"DisplayDimension","value":""},{"name":"OSversion","value":"Windows 10"},{"name":"AppVersion","value":""},{"name":"DeviceRooted","value":""},{"name":"NetworkOperatoreName","value":""},{"name":"ServiceOperatorName","value":""},{"name":"Custom1","value":"Firefox"},{"name":"Custom2","value":54},{"name":"Custom3","value":"1920x1080"},{"name":"Custom4","value":"PC"},{"name":"Custom5","value":""},{"name":"Custom6","value":""},{"name":"Custom7","value":""},{"name":"Custom8","value":""},{"name":"Custom9","value":""}]}'
+            'customData': '{"customData":[{"name":"deviceType","value":' + DEVICE_TYPE + '},{"name":"deviceVendor","value":""},{"name":"accountDeviceModel","value":""},{"name":"FirmwareVersion","value":""},{"name":"Loader","value":""},{"name":"ResidentApp","value":""},{"name":"DeviceLanguage","value":"it"},{"name":"NetworkType","value":""},{"name":"DisplayDimension","value":"30.6"},{"name":"OSversion","value":"Windows 10"},{"name":"AppVersion","value": \"' + self.app_version +'\"},{"name":"DeviceRooted","value":""},{"name":"NetworkOperatoreName","value":""},{"name":"ServiceOperatorName","value":""},{"name":"Custom1","value":"Firefox"},{"name":"Custom2","value":91},{"name":"Custom3","value":"1920x1080"},{"name":"Custom4","value":"PC"},{"name":"Custom5","value":""},{"name":"Custom6","value":""},{"name":"Custom7","value":""},{"name":"Custom8","value":""},{"name":"Custom9","value":""}]}'
         }
-        url = "/besc?action=Login&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}&accountDeviceId=%s" % (deviceId)
+        url = "/besc?action=Login&channel={channel}&providerName={providerName}&serviceName={serviceName}&deviceType={deviceType}&accountDeviceId=%s&accountDeviceVersion={appVersion}&appVersion={appVersion}&accountDeviceIdType=SERIALNUMBER&accountDeviceModel={deviceType}&deviceVendor={deviceType}" % (deviceId)
         response = self.send_request(url=url, base_url=self.BASE_URL_AVS, method="POST", data=data)
         if response != None:
             self.api_endpoint.headers.__setitem__(self.user_http_header, response["resultObj"])
@@ -116,6 +120,7 @@ class TimVisionSession(object):
         if self.stop_check_session != None:
             self.stop_check_session.set()
         return True
+
     def is_logged(self):
         if not self.init_ok:
             self.init_ok = self.setup()
@@ -133,6 +138,8 @@ class TimVisionSession(object):
         response = self.api_endpoint.get(url, params=data) if method == "GET" else self.api_endpoint.post(url, data=data)
         Logger.log_write("Status Code: "+str(response.status_code), Logger.LOG_TIMVISION)
         if response.status_code == 200:
+            if "X-Xsrf-Token" in response.headers.keys():
+                self.xsrf_token = response.headers["X-Xsrf-Token"]
             data = response.json()
             Logger.log_write("Response: "+response.text, Logger.LOG_TIMVISION)
             if isinstance(data, list):
@@ -171,12 +178,14 @@ class TimVisionSession(object):
         return False
 
     def get_license_info(self, content_id, video_type, has_hd=False):
+        if video_type == 'LIVE':
+            return self.get_mpd_live(content_id)
         cp_id, mpd = self.get_mpd_file(content_id, video_type)
         if cp_id != None:
             asset_id_wd = TimVisionSession.get_asset_id_wd(mpd)
             if has_hd and utils.get_setting("prefer_hd"):
                 mpd = mpd.replace("_SD", "_HD")
-            wv_url = self.widevine_proxy_url.replace("{ContentIdAVS}", content_id).replace("{AssetIdWD}", asset_id_wd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(long(time.time() * 1000))).replace("{Channel}", SERVICE_CHANNEL).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
+            wv_url = self.widevine_proxy_url.replace("{ContentIdAVS}", content_id).replace("{AssetIdWD}", asset_id_wd).replace("{CpId}", cp_id).replace("{Type}", "VOD").replace("{ClientTime}", str(int(time.time() * 1000))).replace("{Channel}", SERVICE_CHANNEL).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
             '''
             major_version, _ = utils.get_kodi_version()
             if major_version < 18:
@@ -187,6 +196,22 @@ class TimVisionSession(object):
                 "avs_cookie":self.avs_cookie,
                 "widevine_url": wv_url
             }
+        return None
+
+    def get_mpd_live(self, channel_id):
+        wv_url = self.widevine_proxy_url.replace("{ContentIdAVS}", channel_id).replace("{AssetIdWD}", "%s_LIVE" % channel_id).replace("{CpId}", channel_id).replace("{Type}", "LIVE").replace("{ClientTime}", str(int(time.time() * 1000))).replace("{Channel}", SERVICE_CHANNEL).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
+        mpd = self.get_CDN(channel_id, "LIVE")
+        return {
+                "mpd_file": mpd,
+                "avs_cookie":self.avs_cookie,
+                "widevine_url": wv_url
+            }
+
+    def get_CDN(self, id, type, content_id=None):
+        url = "/besc?action=GetCDN&channel={channel}&orChannel=CUBOWEB&type=LIVE&asJson=Y&serviceName={serviceName}&providerName={providerName}&deviceType={deviceType}&orDeviceType=CHROME&id=%s&appVersion={appVersion}" % (id) if type == "LIVE" else "/besc?action=GetCDN&channel={channel}&orChannel=CUBOWEB&type=TRAILER&asJson=Y&serviceName={serviceName}&providerName={providerName}&deviceType={deviceType}&orDeviceType=CHROME&cp_id=%s&orCp_id=%s&appVersion={appVersion}&contentId=%s&videoType=SD&pch" % (id, id, content_id)
+        response = self.send_request(url, self.BASE_URL_AVS)
+        if response != None:
+            return response["resultObj"]["src"]
         return None
 
     @staticmethod
@@ -302,14 +327,14 @@ class TimVisionSession(object):
         cp_id, _mpd = self.get_mpd_file(content_id, "MOVIE")
         if cp_id is None:
             return None
-        url = "/besc?action=GetCDN&channel={channel}&type=TRAILER&asJson=Y&serviceName={serviceName}&providerName={providerName}&deviceType=CHROME&cp_id="+cp_id
+        url = "/besc?action=GetCDN&channel={channel}&orChannel=CUBOWEB&type=TRAILER&asJson=Y&serviceName={serviceName}&providerName={providerName}&deviceType={deviceType}&orDeviceType=CHROME&cp_id=%s&orCp_id=%s&appVersion={appVersion}&contentId=%s&videoType=SD&pch" % (cp_id, cp_id, content_id)
         response = self.send_request(url, self.BASE_URL_AVS)
         if response != None:
             return response["resultObj"]["src"]
         return None
 
     def search(self, keyword, area=AREA_FREE):
-        keyword = urllib.quote(keyword)
+        keyword = quote(keyword)
         url = "/TRAY/SEARCHRECOM?keyword="+keyword+"&from=0&to=100&area="+area+"&category=ALL&deviceType={deviceType}&serviceName={serviceName}"
         response = self.send_request(url, self.BASE_URL_TIM)
         if response != None:
