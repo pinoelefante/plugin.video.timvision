@@ -12,6 +12,7 @@ ITEM_MOVIE = "MOVIE"
 ITEM_EPISODE = "EPISODE"
 ITEM_SEASON = "SEASON"
 ITEM_COLLECTION = "COLLECTION"
+ITEM_LIVE = "LIVE"
 
 def parse_collection(collection):
     content = []
@@ -23,6 +24,8 @@ def parse_collection(collection):
             content.append(parse_season(container))
         elif item_type == ITEM_COLLECTION:
             content.append(parse_item_collection(container))
+        elif item_type == ITEM_LIVE:
+            content.append(parse_live(container))
     return content
 
 def get_item_type(value):
@@ -34,6 +37,8 @@ def get_item_type(value):
         return ITEM_MOVIE
     elif value == "SEASON":
         return ITEM_SEASON
+    elif value == "TVPROGRAM_ITEM":
+        return ITEM_LIVE
     #["COLLECTION_ITEM", "EDITORIAL_ITEM", "KIDS_ITEM"]
     return ITEM_COLLECTION
 
@@ -85,6 +90,19 @@ def parse_content(item, mediatype):
 
     return content
 
+def parse_live(item):
+    content_id = item["metadata"]["contentId"]
+    title = item["metadata"]["title"]
+    channel = item["metadata"]["channelName"]
+    content = TimVisionLiveContent(content_id, "%s - %s" % (channel, title))
+    content.plot = item["metadata"]["longDescription"] if "longDescription" in item["metadata"] else None
+    content.poster = item["metadata"]["imageUrl"] if "imageUrl" in item["metadata"] else None
+    content.fanart = item["metadata"]["imageUrl"] if "imageUrl" in item["metadata"] else None
+    content.channel_id = item["metadata"]["dttObject"][0]["OriginalNetworkID"]
+    content.startTime = item["metadata"]["startBroadcastTime"] if "startBroadcastTime" in item["metadata"] else None
+    content.duration = item["metadata"]["duration"] if "duration" in item["metadata"] else None
+    return content
+
 def parse_season(item):
     content_id = item["metadata"]["contentId"]
     season_no = item["metadata"]["season"]
@@ -107,6 +125,33 @@ class TimVisionBaseObject(object):
         list_item.setArt({"fanart": self.fanart, "poster": self.poster})
         is_folder = False
         url = ""
+        return list_item, is_folder, url
+
+class TimVisionLiveContent(TimVisionBaseObject):
+    plot = None
+    channel_type = None
+    duration = 0
+    startTime = None
+    genre = None
+    channel_id = None
+    mediatype = ITEM_LIVE
+
+    def __init__(self, content_id, title):
+        super(TimVisionLiveContent, self).__init__(content_id, title)
+
+    def get_list_item(self):
+        list_item, is_folder, url = super(TimVisionLiveContent, self).get_list_item()
+        is_folder = False
+        url = "?action=play_live&id=%s&duration=%s" % (str(self.channel_id), str(self.duration))
+        list_item.setProperty("isPlayable", "true")
+        list_item.setInfo("video", {
+            "plot": self.plot,
+            "title": self.title,
+            "duration": str(self.duration),
+            "genre": self.genre,
+            "mediatype": "movie"
+        })
+        list_item.addStreamInfo("video", {'width': '768', 'height': '432'})
         return list_item, is_folder, url
 
 class TimVisionContent(TimVisionBaseObject):

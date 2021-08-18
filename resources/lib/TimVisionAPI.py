@@ -178,6 +178,8 @@ class TimVisionSession(object):
         return False
 
     def get_license_info(self, content_id, video_type, has_hd=False):
+        if video_type == 'LIVE':
+            return self.get_mpd_live(content_id)
         cp_id, mpd = self.get_mpd_file(content_id, video_type)
         if cp_id != None:
             asset_id_wd = TimVisionSession.get_asset_id_wd(mpd)
@@ -194,6 +196,22 @@ class TimVisionSession(object):
                 "avs_cookie":self.avs_cookie,
                 "widevine_url": wv_url
             }
+        return None
+
+    def get_mpd_live(self, channel_id):
+        wv_url = self.widevine_proxy_url.replace("{ContentIdAVS}", channel_id).replace("{AssetIdWD}", "%s_LIVE" % channel_id).replace("{CpId}", channel_id).replace("{Type}", "LIVE").replace("{ClientTime}", str(int(time.time() * 1000))).replace("{Channel}", SERVICE_CHANNEL).replace("{DeviceType}", "CHROME").replace('http://', 'https://')
+        mpd = self.get_CDN(channel_id, "LIVE")
+        return {
+                "mpd_file": mpd,
+                "avs_cookie":self.avs_cookie,
+                "widevine_url": wv_url
+            }
+
+    def get_CDN(self, id, type, content_id=None):
+        url = "/besc?action=GetCDN&channel={channel}&orChannel=CUBOWEB&type=LIVE&asJson=Y&serviceName={serviceName}&providerName={providerName}&deviceType={deviceType}&orDeviceType=CHROME&id=%s&appVersion={appVersion}" % (id) if type == "LIVE" else "/besc?action=GetCDN&channel={channel}&orChannel=CUBOWEB&type=TRAILER&asJson=Y&serviceName={serviceName}&providerName={providerName}&deviceType={deviceType}&orDeviceType=CHROME&cp_id=%s&orCp_id=%s&appVersion={appVersion}&contentId=%s&videoType=SD&pch" % (id, id, content_id)
+        response = self.send_request(url, self.BASE_URL_AVS)
+        if response != None:
+            return response["resultObj"]["src"]
         return None
 
     @staticmethod
